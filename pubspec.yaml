@@ -66,6 +66,8 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - lib/src/assets/Space_Sculpt_Logo_nobg.png
+    - lib/src/assets/Landing_Header_Image.png
+    - lib/src/assets/Landing_Header_Image.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
