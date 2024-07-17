@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "12751064898",
+    "firebase_url": "https://space-sculpt-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "space-sculpt",
+    "storage_bucket": "space-sculpt.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:12751064898:android:ecdec89af0e4b2472c42db",
+        "android_client_info": {
+          "package_name": "com.example.space_sculpt_mobile_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtV_yXKb076VPi24FcSaS7sLTOLC_KSuI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
