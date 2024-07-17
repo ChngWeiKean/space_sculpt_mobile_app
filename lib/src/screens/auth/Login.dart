@@ -92,6 +92,10 @@ class _LoginState extends State<Login> {
     Navigator.pushNamed(context, Routes.register);
   }
 
+  void _navigateToForgotPassword(BuildContext context) {
+    Navigator.pushNamed(context, Routes.forgotPassword);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -133,7 +137,7 @@ class _LoginState extends State<Login> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                      // Implement forgot password action
+                      _navigateToForgotPassword(context);
                     },
                     child: const Text(
                       'Forgot Password?',

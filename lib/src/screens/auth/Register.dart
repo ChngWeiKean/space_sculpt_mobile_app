@@ -69,6 +69,20 @@ class _RegisterState extends State<Register> {
       );
 
       if (message == 'Success') {
+        if (!context.mounted) return;
+
+        // toast success message
+        toastification.show(
+          context: context,
+          type: ToastificationType.success,
+          style: ToastificationStyle.minimal,
+          icon: const Icon(Icons.check_circle),
+          title: const Text('Success'),
+          description: const Text('Account created successfully.'),
+          showProgressBar: true,
+          autoCloseDuration: const Duration(seconds: 3),
+        );
+
         // Fetch the registered user's data
         final user = FirebaseAuth.instance.currentUser;
         if (user != null) {

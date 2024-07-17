@@ -1,18 +1,33 @@
 import 'package:flutter/material.dart';
 
-class Input extends StatelessWidget {
+import '../../colors.dart';
+
+class Input extends StatefulWidget {
   final TextEditingController controller;
   final String labelText;
   final bool obscureText;
-  final String? placeholder; // Optional placeholder parameter
+  final String? placeholder;
 
   const Input({
     super.key,
     required this.controller,
     required this.labelText,
     this.obscureText = false,
-    this.placeholder, // Optional placeholder parameter
+    this.placeholder,
   });
+
+  @override
+  _InputState createState() => _InputState();
+}
+
+class _InputState extends State<Input> {
+  late bool _isObscured;
+
+  @override
+  void initState() {
+    super.initState();
+    _isObscured = widget.obscureText;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +35,7 @@ class Input extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          labelText,
+          widget.labelText,
           style: const TextStyle(
             fontFamily: 'Poppins_Medium',
             fontSize: 16.0,
@@ -28,10 +43,10 @@ class Input extends StatelessWidget {
         ),
         const SizedBox(height: 8.0),
         TextField(
-          controller: controller,
-          obscureText: obscureText,
+          controller: widget.controller,
+          obscureText: _isObscured,
           decoration: InputDecoration(
-            hintText: placeholder, // Set the placeholder text here
+            hintText: widget.placeholder,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.0),
               borderSide: BorderSide(color: Colors.blueGrey[200]!),
@@ -43,6 +58,19 @@ class Input extends StatelessWidget {
             filled: true,
             fillColor: Colors.blueGrey[100],
             contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            suffixIcon: widget.obscureText
+                ? IconButton(
+              icon: Icon(
+                _isObscured ? Icons.visibility : Icons.visibility_off,
+                color: AppColors.buttonColor,
+              ),
+              onPressed: () {
+                setState(() {
+                  _isObscured = !_isObscured;
+                });
+              },
+            )
+                : null,
           ),
           style: const TextStyle(
             fontFamily: 'Poppins_Medium',
