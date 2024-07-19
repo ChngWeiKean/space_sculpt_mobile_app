@@ -1,33 +1,32 @@
 import 'package:flutter/material.dart';
-import '../../colors.dart';
 
-class Input extends StatefulWidget {
-  final TextEditingController controller;
+class DropdownInput extends StatefulWidget {
   final String labelText;
-  final bool obscureText;
-  final String? placeholder;
+  final List<String> items;
+  final String? selectedItem;
+  final Function(String?)? onChanged;
   final bool editable;
 
-  const Input({
+  const DropdownInput({
     super.key,
-    required this.controller,
     required this.labelText,
-    this.obscureText = false,
-    this.placeholder,
+    required this.items,
+    this.selectedItem,
+    this.onChanged,
     this.editable = true,
   });
 
   @override
-  _InputState createState() => _InputState();
+  _DropdownInputState createState() => _DropdownInputState();
 }
 
-class _InputState extends State<Input> {
-  late bool _isObscured;
+class _DropdownInputState extends State<DropdownInput> {
+  String? _selectedItem;
 
   @override
   void initState() {
     super.initState();
-    _isObscured = widget.obscureText;
+    _selectedItem = widget.selectedItem;
   }
 
   @override
@@ -43,12 +42,16 @@ class _InputState extends State<Input> {
           ),
         ),
         const SizedBox(height: 8.0),
-        TextField(
-          controller: widget.controller,
-          enabled: widget.editable,
-          obscureText: _isObscured,
+        DropdownButtonFormField<String>(
+          value: _selectedItem,
+          onChanged: widget.editable ? (value) {
+            setState(() {
+              _selectedItem = value;
+            });
+            widget.onChanged?.call(value);
+          } : null,
           decoration: InputDecoration(
-            hintText: widget.placeholder,
+            hintText: 'Select an option',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.0),
               borderSide: BorderSide(color: Colors.blueGrey[200]!),
@@ -60,24 +63,13 @@ class _InputState extends State<Input> {
             filled: true,
             fillColor: Colors.blueGrey[100],
             contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-            suffixIcon: widget.obscureText
-                ? IconButton(
-              icon: Icon(
-                _isObscured ? Icons.visibility : Icons.visibility_off,
-                color: AppColors.secondary,
-              ),
-              onPressed: () {
-                setState(() {
-                  _isObscured = !_isObscured;
-                });
-              },
-            )
-                : null,
           ),
-          style: const TextStyle(
-            fontFamily: 'Poppins_Medium',
-            color: Colors.black,
-          ),
+          items: widget.items.map((item) {
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Text(item),
+            );
+          }).toList(),
         ),
       ],
     );

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:space_sculpt_mobile_app/colors.dart';
-import 'package:toastification/toastification.dart';
+import '../../widgets/toast.dart';
 import '../../../routes.dart';
 import '../../widgets/input.dart';
 import '../../widgets/button.dart';
@@ -28,16 +28,9 @@ class _LoginState extends State<Login> {
 
     // Validate email and password
     if (email.isEmpty || password.isEmpty) {
-      toastification.show(
-        context: context,
-        type: ToastificationType.error,
-        style: ToastificationStyle.minimal,
-        icon: const Icon(Icons.error),
-        title: const Text('Error Logging In'),
-        description: const Text('Email and password are required.'),
-        showProgressBar: true,
-        autoCloseDuration: const Duration(seconds: 3),
-      );
+      Toast.showErrorToast(title: 'Error Logging In',
+          description: 'Email and password are required',
+          context: context);
       return;
     }
 
@@ -59,32 +52,16 @@ class _LoginState extends State<Login> {
         } else if (userData['role'] == 'Delivery') {
           Navigator.pushNamed(context, Routes.dashboard);
         } else {
-          // Handle other roles or show an error
-          toastification.show(
-            context: context,
-            type: ToastificationType.error,
-            style: ToastificationStyle.minimal,
-            icon: const Icon(Icons.error),
-            title: const Text('Error'),
-            description: const Text('Unknown user role.'),
-            showProgressBar: true,
-            autoCloseDuration: const Duration(seconds: 3),
-          );
+          Toast.showErrorToast(title: 'Error Logging In',
+              description: 'Unknown user role.',
+              context: context);
         }
       }
     } else {
       if (!context.mounted) return;
-      // Display error message to the user
-      toastification.show(
-        context: context,
-        type: ToastificationType.error,
-        style: ToastificationStyle.minimal,
-        icon: const Icon(Icons.error),
-        title: const Text('Error Logging In'),
-        description: const Text('Invalid email or password.'),
-        showProgressBar: true,
-        autoCloseDuration: const Duration(seconds: 3),
-      );
+      Toast.showErrorToast(title: 'Error Logging In',
+          description: 'Invalid email or password.',
+          context: context);
     }
   }
 

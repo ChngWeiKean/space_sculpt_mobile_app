@@ -7,11 +7,11 @@ class Button extends StatelessWidget {
   final double? width; // Optional width parameter
 
   const Button({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     this.width, // Optional width parameter
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +24,7 @@ class Button extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8.0),
           ),
-          backgroundColor: AppColors.buttonColor, // Background color
+          backgroundColor: AppColors.secondary, // Background color
           foregroundColor: Colors.white, // Text color
         ),
         child: Text(

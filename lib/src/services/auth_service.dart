@@ -20,6 +20,7 @@ class AuthService {
       // Store user data in Firebase Realtime Database
       await _db.child('users').child(userCredential.user!.uid).set({
         'email': email,
+        'password': password,
         'name': name,
         'contact': contact,
         'role': role,
@@ -63,6 +64,22 @@ class AuthService {
       }
     } catch (e) {
       return e.toString();
+    }
+  }
+
+  Future<void> updateEmail(String email, String password) async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      AuthCredential credential = EmailAuthProvider.credential(email: user.email!, password: password);
+      await user.reauthenticateWithCredential(credential);
+      await user.verifyBeforeUpdateEmail(email);
+    }
+  }
+
+  Future<void> updatePassword(String newPassword) async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await user.updatePassword(newPassword);
     }
   }
 

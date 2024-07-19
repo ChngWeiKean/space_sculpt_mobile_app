@@ -1,7 +1,7 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:toastification/toastification.dart';
+import '../../widgets/toast.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/input.dart';
 import '../../widgets/button.dart';
@@ -32,31 +32,17 @@ class _RegisterState extends State<Register> {
         _mobileNumberController.text.trim().isEmpty ||
         _passwordController.text.trim().isEmpty ||
         _confirmPasswordController.text.trim().isEmpty) {
-      toastification.show(
-        context: context,
-        type: ToastificationType.error,
-        style: ToastificationStyle.minimal,
-        icon: const Icon(Icons.error),
-        title: const Text('Error Signing Up'),
-        description: const Text('All fields are required.'),
-        showProgressBar: true,
-        autoCloseDuration: const Duration(seconds: 3),
-      );
+      Toast.showErrorToast(title: 'Error Signing Up',
+          description: 'All fields are required.',
+          context: context);
       return;
     }
 
     // Match passwords to confirm password
     if (_passwordController.text.trim() != _confirmPasswordController.text.trim()) {
-      toastification.show(
-        context: context,
-        type: ToastificationType.error,
-        style: ToastificationStyle.minimal,
-        icon: const Icon(Icons.error),
-        title: const Text('Error Signing Up'),
-        description: const Text('Passwords do not match.'),
-        showProgressBar: true,
-        autoCloseDuration: const Duration(seconds: 3),
-      );
+      Toast.showErrorToast(title: 'Error Signing Up',
+          description: 'Passwords do not match.',
+          context: context);
       return;
     }
 
@@ -71,17 +57,9 @@ class _RegisterState extends State<Register> {
       if (message == 'Success') {
         if (!context.mounted) return;
 
-        // toast success message
-        toastification.show(
-          context: context,
-          type: ToastificationType.success,
-          style: ToastificationStyle.minimal,
-          icon: const Icon(Icons.check_circle),
-          title: const Text('Success'),
-          description: const Text('Account created successfully.'),
-          showProgressBar: true,
-          autoCloseDuration: const Duration(seconds: 3),
-        );
+        Toast.showSuccessToast(title: 'Success',
+            description: 'Account created successfully.',
+            context: context);
 
         // Fetch the registered user's data
         final user = FirebaseAuth.instance.currentUser;
@@ -102,59 +80,30 @@ class _RegisterState extends State<Register> {
       } else {
         if (!context.mounted) return;
 
-        // Display error message
-        toastification.show(
-          context: context,
-          type: ToastificationType.error,
-          style: ToastificationStyle.minimal,
-          icon: const Icon(Icons.error),
-          title: const Text('Error Signing Up'),
-          description: Text(message!),
-          showProgressBar: true,
-          autoCloseDuration: const Duration(seconds: 3),
-        );
+        Toast.showErrorToast(title: 'Error Signing Up',
+            description: message!,
+            context: context);
       }
     } on FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
         if (!context.mounted) return;
 
-        toastification.show(
-          context: context,
-          type: ToastificationType.error,
-          style: ToastificationStyle.minimal,
-          icon: const Icon(Icons.error),
-          title: const Text('Error Signing Up'),
-          description: const Text('The account already exists for that email.'),
-          showProgressBar: true,
-          autoCloseDuration: const Duration(seconds: 3),
-        );
+        Toast.showErrorToast(title: 'Error Signing Up',
+            description: 'The account already exists for that email.',
+            context: context);
       } else {
         if (!context.mounted) return;
 
-        toastification.show(
-          context: context,
-          type: ToastificationType.error,
-          style: ToastificationStyle.minimal,
-          icon: const Icon(Icons.error),
-          title: const Text('Error Signing Up'),
-          description: Text(e.message ?? 'An unknown error occurred.'),
-          showProgressBar: true,
-          autoCloseDuration: const Duration(seconds: 3),
-        );
+        Toast.showErrorToast(title: 'Error Signing Up',
+            description: 'An unknown error occurred.',
+            context: context);
       }
     } catch (e) {
       if (!context.mounted) return;
 
-      toastification.show(
-        context: context,
-        type: ToastificationType.error,
-        style: ToastificationStyle.minimal,
-        icon: const Icon(Icons.error),
-        title: const Text('Error Signing Up'),
-        description: const Text('An unknown error occurred.'),
-        showProgressBar: true,
-        autoCloseDuration: const Duration(seconds: 3),
-      );
+      Toast.showErrorToast(title: 'Error Signing Up',
+          description: 'An unknown error occurred.',
+          context: context);
     }
   }
 
