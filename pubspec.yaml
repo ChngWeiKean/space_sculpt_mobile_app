@@ -40,6 +40,10 @@ dependencies:
   firebase_core: ^3.1.0
   firebase_auth: ^5.1.2
   firebase_database: ^11.0.3
+  firebase_storage: ^12.1.1
+  path: ^1.9.0
+  image_picker: ^1.1.2
+  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +72,7 @@ flutter:
     - lib/src/assets/Space_Sculpt_Logo_nobg.png
     - lib/src/assets/Landing_Header_Image.png
     - lib/src/assets/Landing_Header_Image.jpg
+    - lib/src/assets/Landing_Header_Image_no_bg.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

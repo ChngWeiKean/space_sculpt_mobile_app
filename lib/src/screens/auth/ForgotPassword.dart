@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:toastification/toastification.dart';
+import '../../widgets/toast.dart';
 import '../../../routes.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/input.dart';
@@ -21,16 +21,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     String email = _emailController.text.trim();
 
     if (email.isEmpty) {
-      toastification.show(
-        context: context,
-        type: ToastificationType.error,
-        style: ToastificationStyle.minimal,
-        icon: const Icon(Icons.error),
-        title: const Text('Error'),
-        description: const Text('Email is required.'),
-        showProgressBar: true,
-        autoCloseDuration: const Duration(seconds: 3),
-      );
+      Toast.showErrorToast(title: 'Error',
+          description: 'Email is required',
+          context: context);
       return;
     }
 
@@ -39,52 +32,25 @@ class _ForgotPasswordState extends State<ForgotPassword> {
 
       if (!context.mounted) return;
 
-      toastification.show(
-        context: context,
-        type: ToastificationType.success,
-        style: ToastificationStyle.minimal,
-        icon: const Icon(Icons.check_circle),
-        title: const Text('Success'),
-        description: const Text('Password reset email sent.'),
-        showProgressBar: true,
-        autoCloseDuration: const Duration(seconds: 3),
-      );
+      Toast.showSuccessToast(title: 'Success',
+          description: 'Password reset email sent.',
+          context: context);
+
       Navigator.pushNamed(context, Routes.login);
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
-        toastification.show(
-          context: context,
-          type: ToastificationType.error,
-          style: ToastificationStyle.minimal,
-          icon: const Icon(Icons.error),
-          title: const Text('Error'),
-          description: const Text('No user found for that email.'),
-          showProgressBar: true,
-          autoCloseDuration: const Duration(seconds: 3),
-        );
+        Toast.showErrorToast(title: 'Error',
+            description: 'No user found for that email.',
+            context: context);
       } else {
-        toastification.show(
-          context: context,
-          type: ToastificationType.error,
-          style: ToastificationStyle.minimal,
-          icon: const Icon(Icons.error),
-          title: const Text('Error'),
-          description: Text(e.message ?? 'An unknown error occurred.'),
-          showProgressBar: true,
-          autoCloseDuration: const Duration(seconds: 3),
-        );
+        Toast.showErrorToast(title: 'Error',
+            description: 'An unknown error occurred.',
+            context: context);
       }
     } catch (e) {
-      toastification.show(
-        context: context,
-        type: ToastificationType.error,
-        style: ToastificationStyle.minimal,
-        icon: const Icon(Icons.error),
-        title: const Text('Error'),
-        description: const Text('An unknown error occurred.'),
-        showProgressBar: true,
-        autoCloseDuration: const Duration(seconds: 3),
-      );
+      Toast.showErrorToast(title: 'Error',
+          description: 'An unknown error occurred.',
+          context: context);
     }
   }
 
