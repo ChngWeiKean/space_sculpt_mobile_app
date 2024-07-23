@@ -80,7 +80,7 @@ class _DateTimeInputState extends State<DateTimeInput> {
                   borderSide: const BorderSide(color: Color(0xFF3182CE)),
                 ),
                 filled: true,
-                fillColor: Colors.blueGrey[100],
+                fillColor: Colors.blueGrey[50],
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
               ),
               readOnly: true,

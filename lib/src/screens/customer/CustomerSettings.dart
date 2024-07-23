@@ -4,6 +4,7 @@ import 'package:firebase_database/firebase_database.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/customerBottomNavBar.dart';
 import '../../widgets/button.dart';
+import '../../widgets/title.dart';
 import '../../widgets/toast.dart';
 import '../../../routes.dart';
 import '../../../colors.dart';
@@ -26,6 +27,12 @@ class _SettingsPageState extends State<CustomerSettings> {
     super.initState();
     _dbRef = FirebaseDatabase.instance.ref();
     _currentUser = FirebaseAuth.instance.currentUser;
+  }
+
+  @override
+  void dispose() {
+    _dbRef.onDisconnect();
+    super.dispose();
   }
 
   Future<void> _fetchData() async {
@@ -65,26 +72,7 @@ class _SettingsPageState extends State<CustomerSettings> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Stack(
-                        children: [
-                          Text(
-                            'Settings',
-                            style: TextStyle(
-                              fontFamily: 'Poppins_Bold',
-                              color: AppColors.primary,
-                              fontSize: 40.0,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+                const TitleBar(title: 'Settings'),
                 Expanded(
                   child: SingleChildScrollView(
                     child: Padding(
