@@ -12,6 +12,7 @@ import '../../widgets/datetime.dart';
 import '../../../routes.dart';
 import '../../../colors.dart';
 import '../../services/user_profile_service.dart';
+import '../../widgets/title.dart';
 
 class CustomerEditProfile extends StatefulWidget {
   const CustomerEditProfile({super.key});
@@ -39,6 +40,12 @@ class _CustomerEditProfileState extends State<CustomerEditProfile> {
     _currentUser = FirebaseAuth.instance.currentUser;
   }
 
+  @override
+  void dispose() {
+    _dbRef.onDisconnect();
+    super.dispose();
+  }
+
   Future<void> _fetchData() async {
     await _fetchUserData();
   }
@@ -59,7 +66,6 @@ class _CustomerEditProfileState extends State<CustomerEditProfile> {
   Future<void> _editProfile(BuildContext context) async {
     if (_currentUser != null) {
       try {
-        // Call the editCustomerProfile method from UserProfileService
         await _userProfileService.editCustomerProfile({
           'name': _nameController.text,
           'contact': _mobileNumberController.text,
@@ -117,29 +123,7 @@ class _CustomerEditProfileState extends State<CustomerEditProfile> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: AppColors.primary, size: 35.0),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                      ),
-                      const Spacer(),
-                      const Text(
-                        'Edit Profile',
-                        style: TextStyle(
-                          fontFamily: 'Poppins_Bold',
-                          color: AppColors.primary,
-                          fontSize: 40.0,
-                        ),
-                      ),
-                      const Spacer(flex: 2),
-                    ],
-                  ),
-                ),
+                const TitleBar(title: 'Edit Profile', hasBackButton: true),
                 Expanded(
                   child: SingleChildScrollView(
                     child: Padding(

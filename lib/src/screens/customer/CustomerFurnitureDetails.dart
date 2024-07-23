@@ -1,0 +1,553 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:model_viewer_plus/model_viewer_plus.dart';
+import '../../../colors.dart';
+import '../../widgets/title.dart';
+
+class CustomerFurnitureDetails extends StatefulWidget {
+  final String id;
+
+  const CustomerFurnitureDetails({super.key, required this.id});
+
+  @override
+  _CustomerFurnitureDetailsState createState() => _CustomerFurnitureDetailsState();
+}
+
+class _CustomerFurnitureDetailsState extends State<CustomerFurnitureDetails> {
+  User? _currentUser;
+  late DatabaseReference _dbRef;
+  Map<dynamic, dynamic>? _furnitureData;
+  String? _mainImage;
+  String? _currentModelUrl;
+  List<Map<dynamic, dynamic>> _variants = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _dbRef = FirebaseDatabase.instance.ref();
+    _currentUser = FirebaseAuth.instance.currentUser;
+    _fetchData();
+  }
+
+  @override
+  void dispose() {
+    _dbRef.onDisconnect();
+    super.dispose();
+  }
+
+  Future<void> _fetchData() async {
+    await Future.wait([_fetchUserData(), _fetchFurniture()]);
+  }
+
+  Future<void> _fetchUserData() async {
+    if (_currentUser != null) {
+      final snapshot = await _dbRef.child('users/${_currentUser!.uid}').get();
+      if (snapshot.exists) {
+        // Handle user data if needed
+      }
+    }
+  }
+
+  Future<void> _fetchFurniture() async {
+    double averageRating = 0.0;
+    int ratingCount = 0;
+    final snapshot = await _dbRef.child('furniture/${widget.id}').get();
+    if (snapshot.exists) {
+      final data = snapshot.value as Map<dynamic, dynamic>;
+      data['id'] = widget.id;
+
+      final variants = (data['variants'] as Map<dynamic, dynamic>?)?.values.toList() ?? [];
+      if (variants.isNotEmpty) {
+        final defaultVariant = variants.firstWhere(
+                (variant) => int.parse(variant['inventory'].toString()) > 0,
+            orElse: () => variants.first);
+        _mainImage = defaultVariant['image'];
+        _currentModelUrl = defaultVariant['model'];
+        print('Default variant: $_currentModelUrl');
+      }
+      _variants = variants.cast<Map<dynamic, dynamic>>();
+      data['selectedVariant'] = _currentModelUrl;
+      data['order_length'] = (data['orders']?.toList())?.length ?? 0;
+
+      if (data!['ratings'] != null && data!['ratings'] is List) {
+        List ratingsList = data!['ratings'];
+        ratingCount = ratingsList.length;
+        double totalRatings = 0.0;
+
+        for (var rating in ratingsList) {
+          if (rating['rating'] != null) {
+            totalRatings += double.parse(rating!['rating'].toString());
+            data['ratingCount'] = totalRatings;
+          }
+        }
+
+        if (ratingCount > 0) {
+          averageRating = totalRatings / ratingCount;
+          data['averageRating'] = averageRating;
+        }
+      }
+
+      if (double.parse(data['discount']) != 0.0) {
+        double price = double.parse(data['price'].toString());
+        double discount = double.parse(data['discount'].toString());
+        double discountedPrice = price - (price * discount / 100);
+        data['discounted_price'] = discountedPrice.toStringAsFixed(2);
+      }
+
+      setState(() {
+        _furnitureData = data;
+        print('Furniture data: ${_furnitureData?['discounted_price']}');
+      });
+    } else {
+      print('No furniture item found with id ${widget.id}');
+    }
+  }
+
+  void _selectVariant(Map<dynamic, dynamic> variant) {
+    setState(() {
+      _mainImage = variant['image'];
+      _currentModelUrl = variant['model'];
+      _furnitureData?['selectedVariant'] = variant['color'];
+    });
+  }
+
+  void _show3DModelModal() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          content: SizedBox(
+            width: 300,
+            height: 400,
+            child: Column(
+              children: [
+                const Text(
+                  '3D Model',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontFamily: 'Poppins_Bold',
+                  ),
+                ),
+                Expanded(
+                  child: _currentModelUrl != null
+                      ? ModelViewer(
+                    src: '$_currentModelUrl',
+                    alt: '3D Model',
+                    ar: true,
+                    autoRotate: true,
+                    disableZoom: true,
+                  )
+                      : const Center(
+                    child: Text(
+                      'No 3D Model Available',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontFamily: 'Poppins_Medium',
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _furnitureData == null
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+        children: <Widget>[
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              TitleBar(
+                title: '${_furnitureData?['name'] ?? 'Product'}',
+                hasBackButton: true,
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Stack(
+                      children: [
+                        _mainImage != null
+                            ? Image.network(
+                          _mainImage!,
+                          width: double.infinity,
+                          height: 200,
+                          fit: BoxFit.contain,
+                        )
+                            : Container(
+                          width: double.infinity,
+                          height: 200,
+                          color: Colors.grey,
+                          child: const Center(
+                            child: Text(
+                              'No Image',
+                              style: TextStyle(
+                                fontSize: 30,
+                                fontFamily: 'Poppins_Semibold',
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Expanded(
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(32),
+                          ),
+                        ),
+                        padding: const EdgeInsets.only(top: 16, bottom: 90),
+                        child: SingleChildScrollView(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _variants.isNotEmpty
+                                    ? SizedBox(
+                                  height: 85,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: _variants.length,
+                                    itemBuilder: (context, index) {
+                                      final variant = _variants[index];
+                                      final isOutOfStock = int.parse(variant['inventory'].toString()) == 0;
+                                      return GestureDetector(
+                                        onTap: isOutOfStock
+                                            ? null
+                                            : () => _selectVariant(variant),
+                                        child: Stack(
+                                          children: [
+                                            ColorFiltered(
+                                              colorFilter: const ColorFilter.mode(
+                                                  Colors.transparent, BlendMode.multiply),
+                                              child: Container(
+                                                width: 80,
+                                                padding: const EdgeInsets.only(top: 8, bottom: 8),
+                                                margin: const EdgeInsets.only(right: 8),
+                                                decoration: BoxDecoration(
+                                                  color: variant['model'] == _currentModelUrl
+                                                      ? AppColors.primary
+                                                      : Colors.white,
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: Column(
+                                                  children: [
+                                                    Image.network(
+                                                      variant['image'],
+                                                      height: 40,
+                                                      fit: BoxFit.contain,
+                                                    ),
+                                                    const SizedBox(height: 8),
+                                                    Text(
+                                                      variant['color'] ?? 'Unknown',
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                      ),
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                            if (isOutOfStock)
+                                              Center(
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(4),
+                                                  color: Colors.red,
+                                                  child: const Text(
+                                                    'Out of Stock',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 10,
+                                                      fontFamily: 'Poppins_Bold',
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                )
+                                    : const Center(child: Text('No Variants Available')),
+                                const SizedBox(height: 20),
+                                Text(
+                                  _furnitureData?['name'] ?? 'No Name available',
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins_Bold',
+                                    letterSpacing: 1.1,
+                                    fontSize: 20,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    Row(
+                                      children: List.generate(5, (index) {
+                                        double averageRating = _furnitureData?['averageRating'] ?? 0.0;
+                                        return Icon(
+                                          index < averageRating ? Icons.star : Icons.star_border,
+                                          color: Colors.amber,
+                                          size: 20,
+                                        );
+                                      }),
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      '${(_furnitureData?['averageRating'] ?? 0).toStringAsFixed(1)}',
+                                      style: const TextStyle(
+                                        fontFamily: 'Poppins_Bold',
+                                        fontSize: 14,
+                                        color: Colors.amber,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      '(${_furnitureData?['ratingCount'] ?? 0} reviews)',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins_Medium',
+                                        color: Colors.grey[500],
+                                        fontSize: 14,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    IconButton(
+                                      icon: const Icon(Icons.favorite_border,
+                                          size: 20,
+                                          color: Colors.red
+                                      ),
+                                      onPressed: () {
+                                        // Add to favorites
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                Divider(
+                                  height: 1,
+                                  color: Colors.grey[300],
+                                  thickness: 1,
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'Description',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins_Semibold',
+                                    fontSize: 15,
+                                    color: Colors.grey[900]
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  _furnitureData?['description'] ??
+                                      'No description available',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins_Regular',
+                                    fontSize: 12,
+                                    color: Colors.grey[800],
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'Size',
+                                  style: TextStyle(
+                                      fontFamily: 'Poppins_Semibold',
+                                      fontSize: 15,
+                                      color: Colors.grey[900]
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Width: ',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins_Regular',
+                                        fontSize: 14,
+                                        color: Colors.grey[900],
+                                      ),
+                                    ),
+                                    Text(
+                                      '${_furnitureData?['width'] ?? '0'} cm',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins_Regular',
+                                        fontSize: 12,
+                                        color: Colors.grey[800],
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Text(
+                                      'Height: ',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins_Regular',
+                                        fontSize: 14,
+                                        color: Colors.grey[900],
+                                      ),
+                                    ),
+                                    Text(
+                                      '${_furnitureData?['height'] ?? '0'} cm',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins_Regular',
+                                        fontSize: 12,
+                                        color: Colors.grey[800],
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Text(
+                                      'Length: ',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins_Regular',
+                                        fontSize: 14,
+                                        color: Colors.grey[900],
+                                      ),
+                                    ),
+                                    Text(
+                                      '${_furnitureData?['length'] ?? '0'} cm',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins_Regular',
+                                        fontSize: 12,
+                                        color: Colors.grey[800],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'How to Care',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins_Semibold',
+                                    fontSize: 15,
+                                    color: Colors.grey[900]
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  _furnitureData?['care_method'] ??
+                                      'No care instructions available',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins_Regular',
+                                    fontSize: 12,
+                                    color: Colors.grey[800],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Padding (
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              child: Container(
+                padding: const EdgeInsets.only(right: 8, top: 8, bottom: 8, left: 8),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 10,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(36),
+                    topRight: Radius.circular(36),
+                    bottomLeft: Radius.circular(36),
+                    bottomRight: Radius.circular(36),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.view_in_ar,
+                          color: AppColors.secondary, size: 30),
+                      onPressed: _show3DModelModal,
+                    ),
+                    _furnitureData?['discounted_price'] != null
+                        ? Row(
+                      verticalDirection: VerticalDirection.up,
+                      children: [
+                        Text(
+                          'RM ${_furnitureData?['discounted_price'] ?? 'N/A'}',
+                          style: const TextStyle(
+                            fontFamily: 'Poppins_Bold',
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          '${_furnitureData?['price'] ?? 'N/A'}',
+                          style: const TextStyle(
+                            fontFamily: 'Poppins_Medium',
+                            fontSize: 13,
+                            color: Colors.red,
+                            decoration:
+                            TextDecoration.lineThrough,
+                          ),
+                        ),
+                      ],
+                    )
+                        : Text(
+                      'RM ${_furnitureData?['price'] ?? 'N/A'}',
+                      style: const TextStyle(
+                        fontFamily: 'Poppins_Bold',
+                        fontSize: 20,
+                      ),
+                    ),
+                    const Spacer(),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Handle Add to Cart action
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.secondary,
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(36),
+                        ),
+                      ),
+                      child: const Text(
+                        'Add to Cart',
+                        style: TextStyle(
+                          fontFamily: 'Poppins_Semibold',
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          ),
+        ],
+      ),
+    );
+  }
+}
