@@ -47,6 +47,9 @@ dependencies:
   carousel_slider: ^4.2.1
   model_viewer_plus: ^1.8.0
   webview_flutter: ^4.8.0
+  google_place: ^0.4.7
+  google_maps_flutter: ^2.7.0
+  toggle_switch: ^2.3.0
 
 dev_dependencies:
   flutter_test:

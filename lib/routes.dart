@@ -12,6 +12,8 @@ import 'src/screens/auth/UpdatePassword.dart';
 import 'src/screens/customer/CustomerFurnitureDetails.dart';
 import 'src/screens/customer/CustomerCategoryDetails.dart';
 import 'src/screens/customer/CustomerCart.dart';
+import 'src/screens/customer/CustomerAddresses.dart';
+import 'src/screens/customer/CustomerAddressDetails.dart';
 
 class Routes {
   static const String login = '/login';
@@ -27,6 +29,8 @@ class Routes {
   static const String customerFurnitureDetails = '/customer-furniture-details';
   static const String customerCategoryDetails = '/customer-category-details';
   static const String customerCart = '/customer-cart';
+  static const String customerAddresses = '/customer-addresses';
+  static const String customerAddressDetails = '/customer-address-details';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -56,6 +60,10 @@ class Routes {
         return _buildRoute(CustomerCategoryDetails(id: settings.arguments as String));
       case customerCart:
         return _buildRoute(const CustomerCart());
+      case customerAddresses:
+        return _buildRoute(const CustomerAddresses());
+      case customerAddressDetails:
+        return _buildRoute(CustomerAddressDetails(address: settings.arguments as Map<dynamic, dynamic>));
       default:
         return _errorRoute(settings);
     }
