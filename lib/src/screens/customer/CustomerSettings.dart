@@ -76,13 +76,65 @@ class _SettingsPageState extends State<CustomerSettings> {
                 Expanded(
                   child: SingleChildScrollView(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 0.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
-                          Button(
-                            text: 'Logout',
-                            onPressed: () => _logout(context),
+                          // Container for My Addresses and My Vouchers
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.2),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                ListTile(
+                                  leading: const Icon(Icons.location_on),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                  title: const Text(
+                                            'Addresses',
+                                            style: TextStyle(
+                                              fontFamily: 'Poppins_Medium'
+                                            ),
+                                          ),
+                                  trailing: const Icon(Icons.arrow_forward_ios, size: 15),
+                                  onTap: () {
+                                    Navigator.pushNamed(context, Routes.homepage);
+                                  },
+                                ),
+                                const Divider(height: 1, thickness: 1),
+                                ListTile(
+                                  leading: const Icon(Icons.card_giftcard),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                  title: const Text(
+                                            'Vouchers',
+                                            style: TextStyle(
+                                                fontFamily: 'Poppins_Medium'
+                                            ),
+                                          ),
+                                  trailing: const Icon(Icons.arrow_forward_ios, size: 15),
+                                  onTap: () {
+                                    Navigator.pushNamed(context, Routes.homepage);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          // Logout Button
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Button(
+                              text: 'Logout',
+                              onPressed: () => _logout(context),
+                            ),
                           ),
                         ],
                       ),

@@ -4,6 +4,8 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import '../../../colors.dart';
 import '../../widgets/title.dart';
+import '../../services/cart_service.dart';
+import '../../widgets/toast.dart';
 
 class CustomerFurnitureDetails extends StatefulWidget {
   final String id;
@@ -20,7 +22,10 @@ class _CustomerFurnitureDetailsState extends State<CustomerFurnitureDetails> {
   Map<dynamic, dynamic>? _furnitureData;
   String? _mainImage;
   String? _currentModelUrl;
+  String? _selectedVariant;
+  bool _isInCart = false;
   List<Map<dynamic, dynamic>> _variants = [];
+  final CartService _cartService = CartService();
 
   @override
   void initState() {
@@ -37,16 +42,7 @@ class _CustomerFurnitureDetailsState extends State<CustomerFurnitureDetails> {
   }
 
   Future<void> _fetchData() async {
-    await Future.wait([_fetchUserData(), _fetchFurniture()]);
-  }
-
-  Future<void> _fetchUserData() async {
-    if (_currentUser != null) {
-      final snapshot = await _dbRef.child('users/${_currentUser!.uid}').get();
-      if (snapshot.exists) {
-        // Handle user data if needed
-      }
-    }
+    await Future.wait([_fetchFurniture()]);
   }
 
   Future<void> _fetchFurniture() async {
@@ -57,27 +53,34 @@ class _CustomerFurnitureDetailsState extends State<CustomerFurnitureDetails> {
       final data = snapshot.value as Map<dynamic, dynamic>;
       data['id'] = widget.id;
 
-      final variants = (data['variants'] as Map<dynamic, dynamic>?)?.values.toList() ?? [];
+      final variantsMap = data['variants'] as Map<dynamic, dynamic>? ?? {};
+      final variants = variantsMap.entries.map((entry) {
+        return {
+          'id': entry.key,
+          ...entry.value as Map<dynamic, dynamic>
+        };
+      }).toList();
+
       if (variants.isNotEmpty) {
         final defaultVariant = variants.firstWhere(
                 (variant) => int.parse(variant['inventory'].toString()) > 0,
             orElse: () => variants.first);
         _mainImage = defaultVariant['image'];
         _currentModelUrl = defaultVariant['model'];
-        print('Default variant: $_currentModelUrl');
+        _selectedVariant = defaultVariant['id'];
       }
-      _variants = variants.cast<Map<dynamic, dynamic>>();
+      _variants = variants;
       data['selectedVariant'] = _currentModelUrl;
       data['order_length'] = (data['orders']?.toList())?.length ?? 0;
 
-      if (data!['ratings'] != null && data!['ratings'] is List) {
-        List ratingsList = data!['ratings'];
+      if (data['ratings'] != null && data['ratings'] is List) {
+        List ratingsList = data['ratings'];
         ratingCount = ratingsList.length;
         double totalRatings = 0.0;
 
         for (var rating in ratingsList) {
           if (rating['rating'] != null) {
-            totalRatings += double.parse(rating!['rating'].toString());
+            totalRatings += double.parse(rating['rating'].toString());
             data['ratingCount'] = totalRatings;
           }
         }
@@ -97,11 +100,70 @@ class _CustomerFurnitureDetailsState extends State<CustomerFurnitureDetails> {
 
       setState(() {
         _furnitureData = data;
-        print('Furniture data: ${_furnitureData?['discounted_price']}');
+        _checkIfInCart();
       });
     } else {
       print('No furniture item found with id ${widget.id}');
     }
+  }
+
+  Future<void> _checkIfInCart() async {
+    if (_currentUser == null || _selectedVariant == null) {
+      return;
+    }
+
+    try {
+      // Fetch the cart snapshot
+      final cartSnapshot = await _dbRef.child('users/${_currentUser!.uid}/cart').get();
+
+      // Check if cart exists and is a Map
+      if (cartSnapshot.exists && cartSnapshot.value is Map) {
+        final cartData = cartSnapshot.value as Map<dynamic, dynamic>;
+
+        // Use list comprehension and efficient lookups
+        bool found = cartData.values.any((cartItem) {
+          if (cartItem is Map) {
+            return cartItem['furnitureId'] == widget.id &&
+                cartItem['variantId'] == _selectedVariant;
+          }
+          return false;
+        });
+
+        setState(() {
+          _isInCart = found;
+          print('Is in cart: $_isInCart');
+        });
+      } else {
+        setState(() {
+          _isInCart = false;
+        });
+      }
+    } catch (e) {
+      print('Error checking cart: $e');
+      setState(() {
+        _isInCart = false;
+      });
+    }
+  }
+
+  Future<void> _addToCart(userId, furnitureId, variantId, BuildContext context) async {
+    await _cartService.addToCart(userId, furnitureId, variantId);
+
+    // Show success message
+    if (!context.mounted) return;
+
+    Toast.showSuccessToast(title: 'Success',
+        description: 'Successfully added to cart.',
+        context: context);
+
+    // Update cart status
+    _checkIfInCart();
+  }
+
+  void _alreadyInCart(BuildContext context) {
+    Toast.showInfoToast(title: 'Info',
+        description: 'Item already in cart.',
+        context: context);
   }
 
   void _selectVariant(Map<dynamic, dynamic> variant) {
@@ -109,7 +171,9 @@ class _CustomerFurnitureDetailsState extends State<CustomerFurnitureDetails> {
       _mainImage = variant['image'];
       _currentModelUrl = variant['model'];
       _furnitureData?['selectedVariant'] = variant['color'];
+      _selectedVariant = variant['id'];
     });
+    _checkIfInCart();
   }
 
   void _show3DModelModal() {
@@ -522,19 +586,23 @@ class _CustomerFurnitureDetailsState extends State<CustomerFurnitureDetails> {
                     ),
                     const Spacer(),
                     ElevatedButton(
-                      onPressed: () {
-                        // Handle Add to Cart action
+                      onPressed: _isInCart
+                          ? () => _alreadyInCart(context)
+                          : () {
+                        if (_currentUser != null && _selectedVariant != null) {
+                          _addToCart(_currentUser!.uid, widget.id, _selectedVariant, context);
+                        }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.secondary,
+                        backgroundColor: _isInCart ? AppColors.success : AppColors.secondary,
                         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(36),
                         ),
                       ),
-                      child: const Text(
-                        'Add to Cart',
-                        style: TextStyle(
+                      child: Text(
+                        _isInCart ? 'In Cart' : 'Add to Cart',
+                        style: const TextStyle(
                           fontFamily: 'Poppins_Semibold',
                           fontSize: 16,
                           color: Colors.white,
