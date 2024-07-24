@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_place/google_place.dart';
+import 'package:space_sculpt_mobile_app/src/widgets/button.dart';
+import 'package:space_sculpt_mobile_app/src/widgets/toast.dart';
 import '../../../colors.dart';
 import '../../services/address_service.dart';
 import '../../widgets/autocomplete.dart';
@@ -26,6 +28,10 @@ class _CustomerAddressDetailsState extends State<CustomerAddressDetails> {
   bool _isDataLoaded = false;
   User? _currentUser;
 
+  String _name = '';
+  String _address = '';
+  String _placeId = '';
+
   @override
   void initState() {
     super.initState();
@@ -37,8 +43,6 @@ class _CustomerAddressDetailsState extends State<CustomerAddressDetails> {
   Future<void> _fetchPlaceDetails() async {
     final addressMap = widget.address['address'] as Map<dynamic, dynamic>;
     final placeId = addressMap['place_id'];
-
-    print('Place ID: $placeId');
 
     if (placeId != null && placeId is String) {
       final result = await _googlePlace.details.get(placeId);
@@ -84,16 +88,53 @@ class _CustomerAddressDetailsState extends State<CustomerAddressDetails> {
           ),
         );
         _mapController.animateCamera(CameraUpdate.newLatLng(LatLng(location.lat!, location.lng!)));
+
+        // Store the necessary address details
+        _name = details.result!.name!;
+        _address = details.result!.formattedAddress!;
+        _placeId = prediction.placeId!;
       });
     }
   }
 
-  Future<void> _updateDefaultStatus(bool isDefault) async {
+  Future<void> _updateAddress(BuildContext context) async {
+    final addressMap = widget.address['address'] as Map<dynamic, dynamic>;
+    final addressId = addressMap['id'];
+    final userId = _currentUser?.uid;
+    if (userId != null && addressId != null) {
+      final updatedAddress = {
+        'name': _name,
+        'address': _address,
+        'place_id': _placeId,
+        'isDefault': _isDefault,
+      };
+
+      if (!context.mounted) return;
+
+      if (_name == '' || _address == '' || _placeId == '') {
+        Toast.showErrorToast(title: "Error", description: "Please select a valid address", context: context);
+        return;
+      }
+
+      await AddressService().updateAddress(userId, addressId, updatedAddress);
+
+      if (!context.mounted) return;
+
+      Toast.showSuccessToast(title: "Success", description: "Address updated successfully", context: context);
+      Navigator.pop(context, true);
+    }
+  }
+
+  Future<void> _updateDefaultStatus(bool isDefault, BuildContext context) async {
     final addressMap = widget.address['address'] as Map<dynamic, dynamic>;
     final addressId = addressMap['id'];
     final userId = _currentUser?.uid;
     if (addressId != null && userId != null) {
       await AddressService().updateDefaultAddress(userId, addressId);
+
+      if (!context.mounted) return;
+
+      Toast.showSuccessToast(title: "Success", description: "Address updated as Default", context: context);
     }
   }
 
@@ -102,7 +143,7 @@ class _CustomerAddressDetailsState extends State<CustomerAddressDetails> {
     return Scaffold(
       body: Column(
         children: [
-          const TitleBar(title: 'Address Details', hasBackButton: true), // Use custom TitleBar
+          const TitleBar(title: 'Address Details', hasBackButton: true),
           Expanded(
             child: Stack(
               children: [
@@ -121,35 +162,6 @@ class _CustomerAddressDetailsState extends State<CustomerAddressDetails> {
                   top: 8,
                   left: 8,
                   right: 8,
-                  child: Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Set this address as default?',
-                          style: TextStyle(
-                            fontFamily: 'Poppins_Bold',
-                            fontSize: 16.0,
-                          ),
-                        ),
-                      ),
-                      Switch(
-                        inactiveTrackColor: Colors.grey[300],
-                        activeColor: AppColors.secondary,
-                        value: _isDefault,
-                        onChanged: (value) {
-                          setState(() {
-                            _isDefault = value;
-                          });
-                          _updateDefaultStatus(value);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                Positioned(
-                  top: 40, // Adjusted to avoid overlapping with the switch row
-                  left: 8,
-                  right: 8,
                   child: SizedBox(
                     height: 300,
                     child: GooglePlacesAutocomplete(
@@ -159,6 +171,40 @@ class _CustomerAddressDetailsState extends State<CustomerAddressDetails> {
                   ),
                 ),
               ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Set this address as default?',
+                    style: TextStyle(
+                      fontFamily: 'Poppins_Medium',
+                      fontSize: 16.0,
+                    ),
+                  ),
+                ),
+                Switch(
+                  inactiveTrackColor: Colors.grey[300],
+                  activeColor: AppColors.secondary,
+                  value: _isDefault,
+                  onChanged: (value) {
+                    setState(() {
+                      _isDefault = value;
+                    });
+                    _updateDefaultStatus(value, context);
+                  },
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+            child: Button(
+              onPressed: () => _updateAddress(context),
+              text: 'Update Address',
             ),
           ),
         ],

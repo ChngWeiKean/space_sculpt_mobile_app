@@ -375,7 +375,7 @@ class _CustomerFurnitureDetailsState extends State<CustomerFurnitureDetails> {
                                     Text(
                                       '${(_furnitureData?['averageRating'] ?? 0).toStringAsFixed(1)}',
                                       style: const TextStyle(
-                                        fontFamily: 'Poppins_Bold',
+                                        fontFamily: 'Poppins_Medium',
                                         fontSize: 14,
                                         color: Colors.amber,
                                         overflow: TextOverflow.ellipsis,
