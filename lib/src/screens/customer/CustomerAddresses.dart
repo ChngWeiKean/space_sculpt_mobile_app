@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:space_sculpt_mobile_app/src/widgets/button.dart';
 import '../../../colors.dart';
 import '../../../routes.dart';
 import '../../widgets/title.dart';
@@ -116,18 +117,23 @@ class _CustomerAddressesState extends State<CustomerAddresses> {
                       child: ListTile(
                         title: Stack(
                           children: [
-                            Text(address['name']),
+                            Text(address['name'],
+                                style: const TextStyle(fontSize: 16, fontFamily: 'Poppins_Medium')),
                             if (address['isDefault'] == true)
                               const Positioned(
                                 right: 0,
                                 child: Badge(
-                                  label: Text('Default'),
+                                  label: Text('DEFAULT',
+                                      style: TextStyle(fontSize: 10, fontFamily: 'Poppins_Bold')),
                                   backgroundColor: AppColors.secondary,
                                 ),
                               ),
                           ],
                         ),
-                        subtitle: Text(address['address']),
+                        subtitle: Text(address['address'],
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12, fontFamily: 'Poppins_Regular')),
                         trailing: const Icon(Icons.arrow_forward_ios, size: 15),
                         onTap: () => _showAddressDetails(address),
                       ),
@@ -136,6 +142,13 @@ class _CustomerAddressesState extends State<CustomerAddresses> {
                   ],
                 );
               },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Button(
+              text: 'Add New Address',
+              onPressed: () => Navigator.pushNamed(context, Routes.customerAddNewAddress),
             ),
           ),
         ],
