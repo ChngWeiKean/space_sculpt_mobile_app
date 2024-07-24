@@ -35,4 +35,21 @@ class Toast {
       autoCloseDuration: const Duration(seconds: 3),
     );
   }
+
+  static void showInfoToast({
+    required String title,
+    required String description,
+    required BuildContext context,
+  }) {
+    toastification.show(
+      context: context,
+      type: ToastificationType.info,
+      style: ToastificationStyle.minimal,
+      icon: const Icon(Icons.info),
+      title: Text(title),
+      description: Text(description),
+      showProgressBar: true,
+      autoCloseDuration: const Duration(seconds: 3),
+    );
+  }
 }
