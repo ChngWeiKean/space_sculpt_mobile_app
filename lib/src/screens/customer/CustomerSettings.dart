@@ -121,7 +121,7 @@ class _SettingsPageState extends State<CustomerSettings> {
                                           ),
                                   trailing: const Icon(Icons.arrow_forward_ios, size: 15),
                                   onTap: () {
-                                    Navigator.pushNamed(context, Routes.homepage);
+                                    Navigator.pushNamed(context, Routes.customerVouchers);
                                   },
                                 ),
                               ],
