@@ -15,6 +15,7 @@ import 'src/screens/customer/CustomerCart.dart';
 import 'src/screens/customer/CustomerAddresses.dart';
 import 'src/screens/customer/CustomerAddressDetails.dart';
 import 'src/screens/customer/CustomerAddNewAddress.dart';
+import 'src/screens/customer/CustomerVouchers.dart';
 
 class Routes {
   static const String login = '/login';
@@ -33,6 +34,7 @@ class Routes {
   static const String customerAddresses = '/customer-addresses';
   static const String customerAddressDetails = '/customer-address-details';
   static const String customerAddNewAddress = '/customer-add-new-address';
+  static const String customerVouchers = '/customer-vouchers';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -68,6 +70,8 @@ class Routes {
         return _buildRoute(CustomerAddressDetails(address: settings.arguments as Map<dynamic, dynamic>));
       case customerAddNewAddress:
         return _buildRoute(const CustomerAddNewAddress());
+      case customerVouchers:
+        return _buildRoute(const CustomerVouchers());
       default:
         return _errorRoute(settings);
     }
