@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:space_sculpt_mobile_app/src/widgets/button.dart';
+import 'package:space_sculpt_mobile_app/src/widgets/toast.dart';
 import '../../widgets/customerBottomNavBar.dart';
 import '../../../routes.dart';
 import '../../services/cart_service.dart';
@@ -18,7 +19,7 @@ class _CustomerCartState extends State<CustomerCart> {
   Map<dynamic, dynamic>? _cartData;
   late DatabaseReference _dbRef;
   bool _isLoading = true;
-  List<Map<dynamic, dynamic>> _cartItems = [];
+  final List<Map<dynamic, dynamic>> _cartItems = [];
   final CartService _cartService = CartService();
 
   @override
@@ -79,6 +80,27 @@ class _CustomerCartState extends State<CustomerCart> {
     Navigator.pushNamed(context, Routes.homepage);
   }
 
+  void _handleCheckout() {
+    List<Map<dynamic, dynamic>> availableItems = _cartItems.where((item) {
+      return int.parse(item['variantData']['inventory']) > 0;
+    }).toList();
+
+    print(availableItems.length);
+
+    if (availableItems.isEmpty) {
+      // Show a message if no items are available for checkout
+      Toast.showInfoToast(title: 'No Items Available', description: 'All items in your cart are out of stock.', context: context);
+      return;
+    }
+
+    // Navigate to the checkout page with available items
+    Navigator.pushNamed(
+      context,
+      Routes.customerCheckout,
+      arguments: availableItems,
+    );
+  }
+
   void _removeFromCart(String itemId) {
     showDialog(
       context: context,
@@ -109,113 +131,113 @@ class _CustomerCartState extends State<CustomerCart> {
   }
 
   Widget _buildCartItem(Map<dynamic, dynamic> item) {
-    return Card(
-      color: Colors.white,
-      margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Image.network(item['variantData']['image'], fit: BoxFit.contain, width: 100, height: 100),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    bool isOutOfStock = item['variantData']['inventory'] == 0;
+
+    return Column(
+      children: [
+        ListTile(
+          leading: Image.network(
+            item['variantData']['image'],
+            fit: BoxFit.contain,
+            width: 100,
+            height: 100,
+          ),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  item['furnitureData']['name'],
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontFamily: 'Poppins_Bold',
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.black, size: 25),
+                onPressed: () => _removeFromCart(item['id']),
+              ),
+            ],
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${item['variantData']['color']}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontFamily: 'Poppins_SemiBold',
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  item['furnitureData']['discounted_price'] != null
+                      ? Row(
                     children: [
-                      Expanded(
-                        child: Text(item['furnitureData']['name'],
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontFamily: 'Poppins_Bold',
-                            )
+                      Text(
+                        'RM ${item['furnitureData']['discounted_price']}',
+                        style: const TextStyle(
+                          fontFamily: 'Poppins_Medium',
+                          fontSize: 13,
                         ),
                       ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'RM ${item['furnitureData']['price']}',
+                        style: const TextStyle(
+                          fontFamily: 'Poppins_Medium',
+                          fontSize: 11,
+                          color: Colors.red,
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                      ),
+                    ],
+                  )
+                      : Text(
+                    'RM ${item['furnitureData']['price']}',
+                    style: const TextStyle(
+                      fontFamily: 'Poppins_Medium',
+                      fontSize: 13,
+                    ),
+                  ),
+                  Row(
+                    children: [
                       IconButton(
-                        icon: const Icon(Icons.close, color: Colors.black, size: 25),
-                        onPressed: () => _removeFromCart(item['id']),
+                        icon: const Icon(Icons.remove, size: 20),
+                        onPressed: () {
+                          if (item['quantity'] > 1) {
+                            _updateQuantity(item['id'], item['quantity'] - 1);
+                          }
+                        },
+                      ),
+                      Text('${item['quantity']}'),
+                      IconButton(
+                        icon: const Icon(Icons.add, size: 20),
+                        onPressed: () {
+                          _updateQuantity(item['id'], item['quantity'] + 1);
+                        },
                       ),
                     ],
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('${item['variantData']['color']}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontFamily: 'Poppins_SemiBold',
-                              )
-                          ),
-                          item['furnitureData']['discounted_price'] != null
-                              ? Row(
-                            verticalDirection: VerticalDirection.up,
-                            children: [
-                              Text(
-                                'RM ${item['furnitureData']['discounted_price']}',
-                                style: const TextStyle(
-                                  fontFamily: 'Poppins_Medium',
-                                  fontSize: 13,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                'RM ${item['furnitureData']['price']}',
-                                style: const TextStyle(
-                                  fontFamily: 'Poppins_Medium',
-                                  fontSize: 11,
-                                  color: Colors.red,
-                                  decoration: TextDecoration.lineThrough,
-                                ),
-                              ),
-                            ],
-                          )
-                              : Text(
-                            'RM ${item['furnitureData']['price']}',
-                            style: const TextStyle(
-                              fontFamily: 'Poppins_Medium',
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.remove, size: 20),
-                                  onPressed: () {
-                                    if (item['quantity'] > 1) {
-                                      _updateQuantity(item['id'], item['quantity'] - 1);
-                                    }
-                                  },
-                                ),
-                                Text('${item['quantity']}'),
-                                IconButton(
-                                  icon: const Icon(Icons.add, size: 20),
-                                  onPressed: () {
-                                    _updateQuantity(item['id'], item['quantity'] + 1);
-                                  },
-                                ),
-                              ]
-                          )
-                        ],
-                      ),
-                    ]
-                  )
                 ],
               ),
+            ],
+          ),
+          trailing: isOutOfStock
+              ? Container(
+            color: Colors.red,
+            padding: const EdgeInsets.all(4.0),
+            child: const Text(
+              'Out of Stock',
+              style: TextStyle(color: Colors.white, fontFamily: 'Poppins_Bold'),
             ),
-          ],
+          )
+              : null,
         ),
-      ),
+        const Divider(),
+      ],
     );
   }
 
@@ -255,6 +277,10 @@ class _CustomerCartState extends State<CustomerCart> {
     }
 
     double total = _cartItems.fold(0, (sum, item) {
+      if (item['variantData']['inventory'] == 0) {
+        return sum; // Exclude out-of-stock items from total
+      }
+
       double itemPrice = item['furnitureData']['discounted_price'] != null
           ? double.parse(item['furnitureData']['discounted_price'].toString())
           : double.parse(item['furnitureData']['price'].toString());
@@ -283,7 +309,7 @@ class _CustomerCartState extends State<CustomerCart> {
           const SizedBox(height: 10),
           Button(
             onPressed: () {
-              // Handle checkout
+              _handleCheckout();
             },
             text: 'Proceed to Checkout',
           ),
