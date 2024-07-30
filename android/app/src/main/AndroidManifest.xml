@@ -8,7 +8,8 @@
         android:label="space_sculpt_mobile_app"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true"
+        android:enableOnBackInvokedCallback="true">
         <meta-data android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyA7GFwBMX9veeSvgQTyLNA-dbq7Eu4j7BA"/>
         <activity

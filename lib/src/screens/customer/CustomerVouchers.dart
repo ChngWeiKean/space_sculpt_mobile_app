@@ -147,7 +147,7 @@ class _CustomerVouchersState extends State<CustomerVouchers> {
                       Column(
                         children: [
                           Icon(
-                            voucher['discount_application'] == 'product'
+                            voucher['discount_application'] == 'products'
                                 ? Icons.shopping_bag
                                 : Icons.local_shipping,
                             color: AppColors.secondary,
