@@ -138,6 +138,7 @@ class _CustomerVouchersState extends State<CustomerVouchers> {
                 : _vouchers.isEmpty
                 ? const Center(child: Text('No vouchers found.'))
                 : ListView.builder(
+              padding: const EdgeInsets.all(0.0),
               itemCount: _vouchers.length,
               itemBuilder: (context, index) {
                 final voucher = _vouchers[index];

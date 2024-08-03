@@ -66,10 +66,15 @@ class _CustomerCartState extends State<CustomerCart> {
           }
           var variantData = variantSnapshot.value as Map<dynamic, dynamic>;
           _cartItems.add({
-            'id': key,
-            'furnitureData': furnitureData,
-            'variantData': variantData,
+            'cartId': key,
             'quantity': cartItem['quantity'],
+            'added_on': cartItem['created_on'],
+            'image': variantData['image'],
+            'color': variantData['color'],
+            'inventory': variantData['inventory'],
+            'variantId': cartItem['variantId'],
+            'id': furnitureSnapshot.key,
+            ...furnitureData,
           });
         }
       }
@@ -82,7 +87,7 @@ class _CustomerCartState extends State<CustomerCart> {
 
   void _handleCheckout() {
     List<Map<dynamic, dynamic>> availableItems = _cartItems.where((item) {
-      return int.parse(item['variantData']['inventory']) > 0;
+      return int.parse(item['inventory']) > 0;
     }).toList();
 
     print(availableItems.length);
@@ -131,13 +136,13 @@ class _CustomerCartState extends State<CustomerCart> {
   }
 
   Widget _buildCartItem(Map<dynamic, dynamic> item) {
-    bool isOutOfStock = item['variantData']['inventory'] == 0;
+    bool isOutOfStock = item['inventory'] == 0;
 
     return Column(
       children: [
         ListTile(
           leading: Image.network(
-            item['variantData']['image'],
+            item['image'],
             fit: BoxFit.contain,
             width: 100,
             height: 100,
@@ -147,7 +152,7 @@ class _CustomerCartState extends State<CustomerCart> {
             children: [
               Expanded(
                 child: Text(
-                  item['furnitureData']['name'],
+                  item['name'],
                   style: const TextStyle(
                     fontSize: 16,
                     fontFamily: 'Poppins_Bold',
@@ -155,7 +160,7 @@ class _CustomerCartState extends State<CustomerCart> {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.close, color: Colors.black, size: 25),
+                icon: const Icon(Icons.close, color: Colors.black, size: 20),
                 onPressed: () => _removeFromCart(item['id']),
               ),
             ],
@@ -164,7 +169,7 @@ class _CustomerCartState extends State<CustomerCart> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${item['variantData']['color']}',
+                '${item['color']}',
                 style: const TextStyle(
                   fontSize: 14,
                   fontFamily: 'Poppins_SemiBold',
@@ -173,11 +178,11 @@ class _CustomerCartState extends State<CustomerCart> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  item['furnitureData']['discounted_price'] != null
+                  item['discounted_price'] != null
                       ? Row(
                     children: [
                       Text(
-                        'RM ${item['furnitureData']['discounted_price']}',
+                        'RM ${item['discounted_price']}',
                         style: const TextStyle(
                           fontFamily: 'Poppins_Medium',
                           fontSize: 13,
@@ -185,7 +190,7 @@ class _CustomerCartState extends State<CustomerCart> {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        'RM ${item['furnitureData']['price']}',
+                        'RM ${item['price']}',
                         style: const TextStyle(
                           fontFamily: 'Poppins_Medium',
                           fontSize: 11,
@@ -196,7 +201,7 @@ class _CustomerCartState extends State<CustomerCart> {
                     ],
                   )
                       : Text(
-                    'RM ${item['furnitureData']['price']}',
+                    'RM ${item['price']}',
                     style: const TextStyle(
                       fontFamily: 'Poppins_Medium',
                       fontSize: 13,
@@ -205,7 +210,7 @@ class _CustomerCartState extends State<CustomerCart> {
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.remove, size: 20),
+                        icon: const Icon(Icons.remove, size: 15),
                         onPressed: () {
                           if (item['quantity'] > 1) {
                             _updateQuantity(item['id'], item['quantity'] - 1);
@@ -214,7 +219,7 @@ class _CustomerCartState extends State<CustomerCart> {
                       ),
                       Text('${item['quantity']}'),
                       IconButton(
-                        icon: const Icon(Icons.add, size: 20),
+                        icon: const Icon(Icons.add, size: 15),
                         onPressed: () {
                           _updateQuantity(item['id'], item['quantity'] + 1);
                         },
@@ -236,7 +241,7 @@ class _CustomerCartState extends State<CustomerCart> {
           )
               : null,
         ),
-        const Divider(),
+        Divider(height: 0, color: Colors.grey[300]),
       ],
     );
   }
@@ -277,13 +282,13 @@ class _CustomerCartState extends State<CustomerCart> {
     }
 
     double total = _cartItems.fold(0, (sum, item) {
-      if (item['variantData']['inventory'] == 0) {
+      if (item['inventory'] == 0) {
         return sum; // Exclude out-of-stock items from total
       }
 
-      double itemPrice = item['furnitureData']['discounted_price'] != null
-          ? double.parse(item['furnitureData']['discounted_price'].toString())
-          : double.parse(item['furnitureData']['price'].toString());
+      double itemPrice = item['discounted_price'] != null
+          ? double.parse(item['discounted_price'].toString())
+          : double.parse(item['price'].toString());
       return sum + (itemPrice * item['quantity']);
     });
 

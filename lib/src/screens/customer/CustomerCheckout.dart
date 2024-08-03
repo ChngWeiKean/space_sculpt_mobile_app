@@ -238,7 +238,7 @@ class _CustomerCheckoutState extends State<CustomerCheckout> {
     // Get widget.cartItems and calculate total weight
     double weight = 0.0;
     for (var item in widget.cartItems) {
-      final weightValue = double.parse(item['furnitureData']['weight']);
+      final weightValue = double.parse(item['weight']);
       final quantity = int.parse(item['quantity'].toString());
       weight += weightValue * quantity;
     }
@@ -275,7 +275,7 @@ class _CustomerCheckoutState extends State<CustomerCheckout> {
 
     double subtotal = 0.0;
     for (var item in widget.cartItems) {
-      final price = double.parse(item['furnitureData']['discounted_price'] ?? item['furnitureData']['price']);
+      final price = double.parse(item['discounted_price'] ?? item['price']);
       final quantity = int.parse(item['quantity'].toString());
       subtotal += price * quantity;
     }
@@ -548,6 +548,7 @@ class _CustomerCheckoutState extends State<CustomerCheckout> {
                 children: [
                   Expanded(
                     child: ListView.builder(
+                      padding: const EdgeInsets.all(0.0),
                       itemCount: _vouchers.length,
                       itemBuilder: (context, index) {
                         final voucher = _vouchers[index];
@@ -642,7 +643,7 @@ class _CustomerCheckoutState extends State<CustomerCheckout> {
 
   void _filterAvailableItems() {
     availableItems = widget.cartItems.where((item) {
-      return int.parse(item['variantData']['inventory']) > 0;
+      return int.parse(item['inventory']) > 0;
     }).toList();
   }
 
@@ -674,6 +675,8 @@ class _CustomerCheckoutState extends State<CustomerCheckout> {
       'payment': _selectedPaymentMethod,
       'voucher': _selectedVoucher,
     };
+
+    print('Checkout Data: ${checkoutData['items']}');
 
     Navigator.pushNamed(context, Routes.customerPayment, arguments: checkoutData);
   }
@@ -759,6 +762,7 @@ class _CustomerCheckoutState extends State<CustomerCheckout> {
                           ),
                         ),
                         ListView.builder(
+                          padding: const EdgeInsets.all(0.0),
                           physics: const NeverScrollableScrollPhysics(), // Disable scrolling for the list
                           shrinkWrap: true, // Make the list take only the space it needs
                           itemCount: availableItems.length,
@@ -768,7 +772,7 @@ class _CustomerCheckoutState extends State<CustomerCheckout> {
                               children: [
                                 ListTile(
                                   leading: Image.network(
-                                    item['variantData']['image'],
+                                    item['image'],
                                     fit: BoxFit.contain,
                                     width: 100,
                                     height: 100,
@@ -778,7 +782,7 @@ class _CustomerCheckoutState extends State<CustomerCheckout> {
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          item['furnitureData']['name'],
+                                          item['name'],
                                           style: const TextStyle(
                                             fontSize: 16,
                                             fontFamily: 'Poppins_Bold',
@@ -791,7 +795,7 @@ class _CustomerCheckoutState extends State<CustomerCheckout> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        '${item['variantData']['color']}',
+                                        '${item['color']}',
                                         style: const TextStyle(
                                           fontSize: 14,
                                           fontFamily: 'Poppins_SemiBold',
@@ -800,11 +804,11 @@ class _CustomerCheckoutState extends State<CustomerCheckout> {
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          item['furnitureData']['discounted_price'] != null
+                                          item['discounted_price'] != null
                                               ? Row(
                                             children: [
                                               Text(
-                                                'RM ${item['furnitureData']['discounted_price']}',
+                                                'RM ${item['discounted_price']}',
                                                 style: const TextStyle(
                                                   fontFamily: 'Poppins_Medium',
                                                   fontSize: 13,
@@ -812,7 +816,7 @@ class _CustomerCheckoutState extends State<CustomerCheckout> {
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
-                                                'RM ${item['furnitureData']['price']}',
+                                                'RM ${item['price']}',
                                                 style: const TextStyle(
                                                   fontFamily: 'Poppins_Medium',
                                                   fontSize: 11,
@@ -823,7 +827,7 @@ class _CustomerCheckoutState extends State<CustomerCheckout> {
                                             ],
                                           )
                                               : Text(
-                                            'RM ${item['furnitureData']['price']}',
+                                            'RM ${item['price']}',
                                             style: const TextStyle(
                                               fontFamily: 'Poppins_Medium',
                                               fontSize: 13,
