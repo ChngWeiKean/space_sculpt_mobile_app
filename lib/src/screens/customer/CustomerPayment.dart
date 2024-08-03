@@ -605,7 +605,7 @@ class _CustomerPaymentState extends State<CustomerPayment> {
                               children: [
                                 ListTile(
                                   leading: Image.network(
-                                    item['variantData']['image'],
+                                    item['image'],
                                     fit: BoxFit.contain,
                                     width: 100,
                                     height: 100,
@@ -615,7 +615,7 @@ class _CustomerPaymentState extends State<CustomerPayment> {
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          item['furnitureData']['name'],
+                                          item['name'],
                                           style: const TextStyle(
                                             fontSize: 16,
                                             fontFamily: 'Poppins_Bold',
@@ -628,7 +628,7 @@ class _CustomerPaymentState extends State<CustomerPayment> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        '${item['variantData']['color']}',
+                                        '${item['color']}',
                                         style: const TextStyle(
                                           fontSize: 14,
                                           fontFamily: 'Poppins_SemiBold',
@@ -637,11 +637,11 @@ class _CustomerPaymentState extends State<CustomerPayment> {
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          item['furnitureData']['discounted_price'] != null
+                                          item['discounted_price'] != null
                                               ? Row(
                                             children: [
                                               Text(
-                                                'RM ${item['furnitureData']['discounted_price']}',
+                                                'RM ${item['discounted_price']}',
                                                 style: const TextStyle(
                                                   fontFamily: 'Poppins_Medium',
                                                   fontSize: 13,
@@ -649,7 +649,7 @@ class _CustomerPaymentState extends State<CustomerPayment> {
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
-                                                'RM ${item['furnitureData']['price']}',
+                                                'RM ${item['price']}',
                                                 style: const TextStyle(
                                                   fontFamily: 'Poppins_Medium',
                                                   fontSize: 11,
@@ -660,7 +660,7 @@ class _CustomerPaymentState extends State<CustomerPayment> {
                                             ],
                                           )
                                               : Text(
-                                            'RM ${item['furnitureData']['price']}',
+                                            'RM ${item['price']}',
                                             style: const TextStyle(
                                               fontFamily: 'Poppins_Medium',
                                               fontSize: 13,

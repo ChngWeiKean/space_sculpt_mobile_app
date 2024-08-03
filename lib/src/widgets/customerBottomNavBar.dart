@@ -33,7 +33,7 @@ class _CustomerBottomNavBarState extends State<CustomerBottomNavBar> {
         Navigator.pushReplacementNamed(context, Routes.customerCart);
         break;
       case 2:
-        Navigator.pushReplacementNamed(context, '/orders');
+        Navigator.pushReplacementNamed(context, Routes.customerOrders);
         break;
       case 3:
         Navigator.pushReplacementNamed(context, Routes.customerProfile);

@@ -107,6 +107,7 @@ class _CustomerAddressesState extends State<CustomerAddresses> {
                 : _addresses.isEmpty
                 ? const Center(child: Text('No addresses found.'))
                 : ListView.builder(
+              padding: const EdgeInsets.all(0.0),
               itemCount: _addresses.length,
               itemBuilder: (context, index) {
                 final address = _addresses[index];

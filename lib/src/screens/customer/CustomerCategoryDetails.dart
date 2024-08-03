@@ -424,15 +424,17 @@ class _CustomerCategoryDetailsState extends State<CustomerCategoryDetails> {
                 });
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 margin: const EdgeInsets.only(right: 8.0),
                 decoration: BoxDecoration(
-                  color: _selectedSubcategory == null ? AppColors.secondary : AppColors.tertiary,
-                  borderRadius: BorderRadius.circular(16.0),
+                  color: _selectedSubcategory == null ? AppColors.secondary : Colors.white,
+                  borderRadius: BorderRadius.circular(8.0),
+                  border: Border.all(
+                      color: _selectedSubcategory == null ? AppColors.secondary : Colors.grey),
                 ),
-                child: const Text(
+                child: Text(
                   'All',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: _selectedSubcategory == null ? Colors.white : AppColors.tertiary),
                 ),
               ),
             ),
@@ -448,12 +450,14 @@ class _CustomerCategoryDetailsState extends State<CustomerCategoryDetails> {
                   padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                   margin: const EdgeInsets.only(right: 8.0),
                   decoration: BoxDecoration(
-                    color: _selectedSubcategory == subcategory['id'] ? AppColors.secondary : AppColors.tertiary,
-                    borderRadius: BorderRadius.circular(16.0),
+                    color: _selectedSubcategory == subcategory['id'] ? AppColors.secondary : Colors.white,
+                    borderRadius: BorderRadius.circular(8.0),
+                    border: Border.all(
+                        color: _selectedSubcategory == subcategory['id'] ? AppColors.secondary : Colors.grey),
                   ),
                   child: Text(
                     subcategory['name']!,
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(color: _selectedSubcategory == subcategory['id'] ? Colors.white : AppColors.tertiary),
                   ),
                 ),
               );
