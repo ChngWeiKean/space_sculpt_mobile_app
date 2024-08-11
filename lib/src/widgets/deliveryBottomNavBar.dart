@@ -3,14 +3,22 @@ import 'package:space_sculpt_mobile_app/colors.dart';
 import 'package:space_sculpt_mobile_app/routes.dart';
 
 class DeliveryBottomNavBar extends StatefulWidget {
-  const DeliveryBottomNavBar({super.key});
+  final int initialIndex;
+
+  const DeliveryBottomNavBar({super.key, required this.initialIndex});
 
   @override
   _DeliveryBottomNavBarState createState() => _DeliveryBottomNavBarState();
 }
 
 class _DeliveryBottomNavBarState extends State<DeliveryBottomNavBar> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -19,49 +27,64 @@ class _DeliveryBottomNavBarState extends State<DeliveryBottomNavBar> {
 
     switch (index) {
       case 0:
-        Navigator.pushNamed(context, Routes.dashboard);
+        Navigator.pushReplacementNamed(context, Routes.dashboard);
         break;
       case 1:
-        Navigator.pushNamed(context, '/orders');
+        Navigator.pushReplacementNamed(context, Routes.deliveryOrderHistory);
         break;
       case 2:
-        Navigator.pushNamed(context, '/profile');
+        Navigator.pushReplacementNamed(context, Routes.customerProfile);
         break;
       case 3:
-        Navigator.pushNamed(context, '/settings');
+        Navigator.pushReplacementNamed(context, Routes.customerSettings);
         break;
     }
+  }
+
+  List<BottomNavigationBarItem> _buildBottomNavigationBarItems() {
+    return [
+      BottomNavigationBarItem(
+        icon: Icon(
+          Icons.home,
+          color: _selectedIndex == 0 ? AppColors.secondary : Colors.black54,
+        ),
+        label: 'Home',
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(
+          Icons.receipt_long,
+          color: _selectedIndex == 1 ? AppColors.secondary : Colors.black54,
+        ),
+        label: 'Orders',
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(
+          Icons.person,
+          color: _selectedIndex == 2 ? AppColors.secondary : Colors.black54,
+        ),
+        label: 'Profile',
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(
+          Icons.settings,
+          color: _selectedIndex == 3 ? AppColors.secondary : Colors.black54,
+        ),
+        label: 'Settings',
+      ),
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
       backgroundColor: Colors.white,
-      selectedItemColor: AppColors.secondary,
       selectedFontSize: 12.0,
       unselectedFontSize: 12.0,
-      unselectedItemColor: Colors.black54,
+      selectedLabelStyle: const TextStyle(color: AppColors.secondary),
       showUnselectedLabels: true,
       currentIndex: _selectedIndex,
       type: BottomNavigationBarType.fixed,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.receipt_long),
-          label: 'Orders',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Profile',
-        ),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings'
-        )
-      ],
+      items: _buildBottomNavigationBarItems(),
       onTap: _onItemTapped,
     );
   }

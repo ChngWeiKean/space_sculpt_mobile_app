@@ -21,6 +21,9 @@ import 'src/screens/customer/CustomerPayment.dart';
 import 'src/screens/customer/CustomerOrders.dart';
 import 'src/screens/customer/CustomerOrderDetails.dart';
 import 'src/screens/customer/CustomerOrderStatus.dart';
+import 'src/screens/delivery/DeliveryOrderHistory.dart';
+import 'src/screens/delivery/DeliveryOrderDetails.dart';
+import 'src/screens/delivery/DeliveryOrderStatus.dart';
 
 class Routes {
   static const String login = '/login';
@@ -45,6 +48,9 @@ class Routes {
   static const String customerOrders = '/customer-orders';
   static const String customerOrderDetails = '/customer-order-details';
   static const String customerOrderStatus = '/customer-order-status';
+  static const String deliveryOrderHistory = '/delivery-order-history';
+  static const String deliveryOrderDetails = '/delivery-order-details';
+  static const String deliveryOrderStatus = '/delivery-order-status';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -92,6 +98,12 @@ class Routes {
         return _buildRoute(CustomerOrderDetails(orderId: settings.arguments as String));
       case customerOrderStatus:
         return _buildRoute(CustomerOrderStatus(orderId: settings.arguments as String));
+      case deliveryOrderHistory:
+        return _buildRoute(const DeliveryOrderHistory());
+      case deliveryOrderDetails:
+        return _buildRoute(DeliveryOrderDetails(orderId: settings.arguments as String));
+      case deliveryOrderStatus:
+        return _buildRoute(DeliveryOrderStatus(orderId: settings.arguments as String));
       default:
         return _errorRoute(settings);
     }

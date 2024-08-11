@@ -7,16 +7,16 @@ import 'package:timelines/timelines.dart';
 import '../../../colors.dart';
 import '../../../routes.dart';
 
-class CustomerOrderStatus extends StatefulWidget {
+class DeliveryOrderStatus extends StatefulWidget {
   final String orderId;
 
-  const CustomerOrderStatus({super.key, required this.orderId});
+  const DeliveryOrderStatus({super.key, required this.orderId});
 
   @override
-  _CustomerOrderStatusState createState() => _CustomerOrderStatusState();
+  _DeliveryOrderStatusState createState() => _DeliveryOrderStatusState();
 }
 
-class _CustomerOrderStatusState extends State<CustomerOrderStatus> {
+class _DeliveryOrderStatusState extends State<DeliveryOrderStatus> {
   late DatabaseReference _dbRef;
   late User _currentUser;
   Map<dynamic, dynamic>? _orderData;
@@ -79,15 +79,15 @@ class _CustomerOrderStatusState extends State<CustomerOrderStatus> {
   String _getStatusDescription(String status) {
     switch (status) {
       case 'Pending':
-        return 'Your order is being processed.';
+        return 'The order is being processed.';
       case 'Ready For Shipping':
-        return 'Your order is ready to be shipped.';
+        return 'The order is ready to be shipped.';
       case 'Shipping':
-        return 'Your order is on the way.';
+        return 'The order is on the way.';
       case 'Arrived':
-        return 'Your order has arrived at the destination.';
+        return 'The order has arrived at the destination.';
       case 'Completed':
-        return 'Your order is completed.';
+        return 'The order is completed.';
       default:
         return 'Unknown status.';
     }
@@ -116,24 +116,24 @@ class _CustomerOrderStatusState extends State<CustomerOrderStatus> {
 
     switch (currentStatus) {
       case 'Pending':
-        return '$date - Your order is currently being processed by our system. We are working hard to ensure that your items are prepared and packaged with care.';
+        return '$date - The order is being processed. Please be ready to pick it up for delivery soon.';
       case 'Ready For Shipping':
-        return '$date - Great news! Your order has been packed and is ready for shipping. We are coordinating with our logistics partners to ensure a smooth and prompt delivery.';
+        return '$date - The order is ready for pickup. Coordinate with the logistics team to start the delivery.';
       case 'Shipping':
-        return '$date - Your order is on its way! Our delivery team is doing their best to bring your package to you as quickly as possible.';
+        return '$date - You are currently delivering this order. Please ensure it reaches the customer safely and on time.';
       case 'Arrived':
-        return '$date - Your order has arrived at the destination. Please be ready to receive your package.';
+        return '$date - You have arrived at the destination. Please deliver the package to the customer and confirm the handover.';
       case 'Completed':
-        return '$date - Your order has been successfully completed and delivered. We appreciate your trust in our service and hope you are satisfied with your purchase.';
+        return '$date - The delivery has been completed successfully. Thank you for ensuring the customer received their order.';
       default:
-        return 'The current status of your order is unknown. Please check your order details or contact our support team for more information.';
+        return 'The current status of this order is unknown. Please check the order details or contact support for more information.';
     }
   }
 
   List<Widget> _buildTimeline() {
     final Map<String, String> statuses = {
       'Pending': 'Pending',
-      'ReadyForShipping': 'Ready For Shipping', // Displayed as 'Ready For Shipping'
+      'ReadyForShipping': 'Ready For Shipping',
       'Shipping': 'Shipping',
       'Arrived': 'Arrived',
       'Completed': 'Completed'
@@ -269,7 +269,7 @@ class _CustomerOrderStatusState extends State<CustomerOrderStatus> {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      'Get by ${_orderData!['shipping_date']}',
+                      'Deliver by ${_orderData!['shipping_date']}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16.0,
