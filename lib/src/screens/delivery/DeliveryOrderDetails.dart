@@ -1,25 +1,33 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:space_sculpt_mobile_app/src/widgets/title.dart';
-import '../../../colors.dart';
+import 'package:space_sculpt_mobile_app/src/services/delivery_service.dart';
+import 'package:space_sculpt_mobile_app/src/widgets/button.dart';
+import 'package:space_sculpt_mobile_app/src/widgets/toast.dart';
 import '../../../routes.dart';
+import '../../widgets/title.dart';
 
-class CustomerOrderDetails extends StatefulWidget {
+class DeliveryOrderDetails extends StatefulWidget {
   final String orderId;
 
-  const CustomerOrderDetails({required this.orderId, super.key});
+  const DeliveryOrderDetails({super.key, required this.orderId});
 
   @override
-  _CustomerOrderDetailsState createState() => _CustomerOrderDetailsState();
+  _DeliveryOrderDetailsState createState() => _DeliveryOrderDetailsState();
 }
 
-class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
+class _DeliveryOrderDetailsState extends State<DeliveryOrderDetails> {
   late DatabaseReference _dbRef;
   late User _currentUser;
   Map<dynamic, dynamic>? _orderData;
   Map<dynamic, dynamic>? _userData;
+  Map<dynamic, dynamic>? _customerData;
+  final DeliveryService _deliveryService = DeliveryService();
+  final List<File> _selectedImages = [];
 
   @override
   void initState() {
@@ -46,6 +54,7 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
     final snapshot = await _dbRef.child('orders/${widget.orderId}').get();
     if (snapshot.exists) {
       _orderData = snapshot.value as Map<dynamic, dynamic>;
+      _fetchCustomerData();
       setState(() {});
     }
   }
@@ -59,6 +68,16 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
           _userData = userData;
         });
       }
+    }
+  }
+
+  Future<void> _fetchCustomerData() async {
+    final snapshot = await _dbRef.child('users/${_orderData!['user_id']}').get();
+    if (snapshot.exists) {
+      final customerData = snapshot.value as Map<dynamic, dynamic>;
+      setState(() {
+        _customerData = customerData;
+      });
     }
   }
 
@@ -84,23 +103,6 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
     }
   }
 
-  String _getStatusDescription(String status) {
-    switch (status) {
-      case 'Pending':
-        return 'Your order is being processed.';
-      case 'Ready For Shipping':
-        return 'Your order is ready to be shipped.';
-      case 'Shipping':
-        return 'Your order is on the way.';
-      case 'Arrived':
-        return 'Your order has arrived at the destination.';
-      case 'Completed':
-        return 'Your order is completed.';
-      default:
-        return 'Unknown status.';
-    }
-  }
-
   String _getDetailedStatusDescription(Map<dynamic, dynamic> status) {
     final String currentStatus = _getCurrentStatus(status);
     final DateFormat formatter = DateFormat('dd MMM'); // Format for day and month
@@ -116,66 +118,175 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
 
     switch (currentStatus) {
       case 'Pending':
-        return '$date - Your order is currently being processed by our system. We are working hard to ensure that your items are prepared and packaged with care.';
+        return '$date - The order is being processed. Please be ready to pick it up for delivery soon.';
       case 'Ready For Shipping':
-        return '$date - Great news! Your order has been packed and is ready for shipping. We are coordinating with our logistics partners to ensure a smooth and prompt delivery.';
+        return '$date - The order is ready for pickup. Coordinate with the logistics team to start the delivery.';
       case 'Shipping':
-        return '$date - Your order is on its way! Our delivery team is doing their best to bring your package to you as quickly as possible.';
+        return '$date - You are currently delivering this order. Please ensure it reaches the customer safely and on time.';
       case 'Arrived':
-        return '$date - Your order has arrived at the destination. Please be ready to receive your package.';
+        return '$date - You have arrived at the destination. Please deliver the package to the customer and confirm the handover.';
       case 'Completed':
-        return '$date - Your order has been successfully completed and delivered. We appreciate your trust in our service and hope you are satisfied with your purchase.';
+        return '$date - The delivery has been completed successfully. Thank you for ensuring the customer received their order.';
       default:
-        return 'The current status of your order is unknown. Please check your order details or contact our support team for more information.';
+        return 'The current status of this order is unknown. Please check the order details or contact support for more information.';
     }
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.camera);
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImages.add(File(pickedFile.path));
+      });
+    }
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      _selectedImages.removeAt(index);
+    });
+  }
+
+  // Different buttons based on the current status of the order
+  Widget _buildActionButton(String status, BuildContext context) {
+    switch (status) {
+      case 'Ready For Shipping':
+        return Button(
+          onPressed: () async {
+            // Show the toast synchronously before the async operation
+            Toast.showSuccessToast(
+                title: "Success",
+                description: "Status updated to Shipping",
+                context: context
+            );
+
+            await DeliveryService().updateStatus(widget.orderId, 'Shipping');
+
+            if (context.mounted) _reloadScreen();
+          },
+          text: 'Start Shipping',
+        );
+      case 'Shipping':
+        return Button(
+          onPressed: () async {
+            Toast.showSuccessToast(
+                title: "Success",
+                description: "Status updated to Arrived",
+                context: context
+            );
+
+            await DeliveryService().updateStatus(widget.orderId, 'Arrived');
+
+            if (context.mounted) _reloadScreen();
+          },
+          text: 'Confirm Arrival',
+        );
+      case 'Arrived':
+        return Column(
+          children: [
+            _buildImagePicker(),
+            Button(
+              onPressed: () async {
+                if (_selectedImages.isEmpty) {
+                  Toast.showErrorToast(
+                      title: "Error",
+                      description: "Please upload at least one image",
+                      context: context
+                  );
+                  return;
+                }
+
+                Toast.showSuccessToast(
+                    title: "Success",
+                    description: "Status updated to Completed",
+                    context: context
+                );
+
+                await DeliveryService().updateStatus(widget.orderId, 'Completed');
+                // Save the images to your storage or database here
+                await _uploadImages();
+
+                if (context.mounted) _reloadScreen();
+              },
+              text: 'Complete Delivery',
+            ),
+          ],
+        );
+      case 'Completed':
+        return Button(
+          onPressed: () {
+            // Logic to view order details
+          },
+          text: 'View Proof of Delivery',
+        );
+      default:
+        return const Text('Unknown status');
+    }
+  }
+
+  // Builds the image picker UI
+  Widget _buildImagePicker() {
+    return Column(
+      children: [
+        Button(
+          onPressed: _pickImage,
+          text: 'Upload Proof of Delivery',
+        ),
+        const SizedBox(height: 10),
+        _selectedImages.isEmpty
+            ? const Text('No images selected')
+            : Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: List.generate(_selectedImages.length, (index) {
+            return Stack(
+              children: [
+                Image.file(
+                  _selectedImages[index],
+                  width: 100,
+                  height: 100,
+                  fit: BoxFit.cover,
+                ),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: IconButton(
+                    icon: const Icon(Icons.cancel, color: Colors.red),
+                    onPressed: () => _removeImage(index),
+                  ),
+                ),
+              ],
+            );
+          }),
+        ),
+        const SizedBox(height: 10),
+      ],
+    );
+  }
+
+  Future<void> _uploadImages() async {
+    // Implement your image upload logic here
+    // For example, upload to Firebase Storage and save the URLs to your database
+  }
+
+  void _reloadScreen() {
+    setState(() {
+      _orderData = null;
+      _userData = null;
+      _customerData = null;
+    });
+    _fetchData();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _orderData == null && _userData == null
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
+      body: _orderData == null && _userData == null && _customerData == null
+        ? const Center(child: CircularProgressIndicator())
+    : SingleChildScrollView(
         child: Column(
           children: [
             const TitleBar(title: 'Order Details', hasBackButton: true),
-            Container(
-              height: 100,
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue, Colors.purple],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _getCurrentStatus(_orderData!['completion_status']),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20.0,
-                        fontFamily: 'Poppins_Bold',
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      _getStatusDescription(_getCurrentStatus(_orderData!['completion_status'])),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16.0,
-                        fontFamily: 'Poppins_Medium',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
             Container(
               width: double.infinity,
               color: Colors.white,
@@ -189,14 +300,14 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
                       onTap: () {
                         Navigator.pushNamed(
                           context,
-                          Routes.customerOrderStatus, arguments: widget.orderId,
+                          Routes.deliveryOrderStatus, arguments: widget.orderId,
                         );
                       },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           const Icon(
-                            Icons.local_shipping_outlined, // Truck icon
+                            Icons.local_shipping_outlined,
                             color: Colors.black,
                             size: 18.0,
                           ),
@@ -229,7 +340,7 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         Text(
-                          '${_userData!['name']}',
+                          '${_customerData?['name']}',
                           style: const TextStyle(
                               color: Colors.black,
                               fontSize: 14.0,
@@ -238,7 +349,7 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          '${_userData!['contact']}',
+                          '${_customerData?['contact']}',
                           style: const TextStyle(
                               color: Colors.black,
                               fontSize: 12.0,
@@ -466,14 +577,17 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            Container(
-              width: double.infinity,
-              color: Colors.white,
-
-            )
-          ],
-        ),
+            const SizedBox(height: 10),
+            Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: _orderData == null
+                    ? const CircularProgressIndicator()
+                    : _orderData!.isEmpty
+                    ? const Text('No order found')
+                    : _buildActionButton(_getCurrentStatus(_orderData!['completion_status']), context),
+            ),
+          ]
+        )
       ),
     );
   }
