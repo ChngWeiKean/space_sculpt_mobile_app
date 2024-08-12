@@ -1,26 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-import '../../widgets/deliveryBottomNavBar.dart';
+import '../../widgets/toast.dart';
 import '../../widgets/input.dart';
-import '../../widgets/title.dart';
+import '../../widgets/button.dart';
 import '../../../routes.dart';
 import '../../../colors.dart';
+import '../../services/user_profile_service.dart';
+import '../../widgets/title.dart';
 
-class DeliveryDriverProfile extends StatefulWidget {
-  const DeliveryDriverProfile({super.key});
+class DeliveryDriverEditProfile extends StatefulWidget {
+  const DeliveryDriverEditProfile({super.key});
 
   @override
-  _DeliveryDriverProfileState createState() => _DeliveryDriverProfileState();
+  _DeliveryDriverEditProfileState createState() => _DeliveryDriverEditProfileState();
 }
 
-class _DeliveryDriverProfileState extends State<DeliveryDriverProfile> {
+class _DeliveryDriverEditProfileState extends State<DeliveryDriverEditProfile> {
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
   final _mobileNumberController = TextEditingController();
   User? _currentUser;
   Map<dynamic, dynamic>? _userData;
   late DatabaseReference _dbRef;
+
+  final UserProfileService _userProfileService = UserProfileService();
 
   @override
   void initState() {
@@ -41,19 +44,52 @@ class _DeliveryDriverProfileState extends State<DeliveryDriverProfile> {
 
   Future<void> _fetchUserData() async {
     if (_currentUser != null) {
-      final snapshot = await _dbRef.child('drivers/${_currentUser!.uid}').get();
+      final snapshot = await _dbRef.child('users/${_currentUser!.uid}').get();
       if (snapshot.exists) {
         _userData = snapshot.value as Map<dynamic, dynamic>;
         _nameController.text = _userData?['name'] ?? '';
-        _emailController.text = _userData?['email'] ?? '';
         _mobileNumberController.text = _userData?['contact'] ?? '';
       }
     }
   }
 
-  void _editProfile() {
-    // Navigate to edit profile page
-    Navigator.pushNamed(context, Routes.deliveryDriverEditProfile);
+  Future<void> _editProfile(BuildContext context) async {
+    if (_currentUser != null) {
+      try {
+        // await _userProfileService.editCustomerProfile({
+        //   'name': _nameController.text,
+        //   'contact': _mobileNumberController.text,
+        // });
+
+        if (!context.mounted) return;
+
+        Toast.showSuccessToast(
+          title: 'Success',
+          description: 'Successfully updated profile',
+          context: context,
+        );
+
+        // Navigate back to the homepage or other appropriate page
+        Navigator.pushReplacementNamed(context, Routes.homepage);
+      } catch (e) {
+        print('Error: $e');
+        if (!context.mounted) return;
+
+        Toast.showErrorToast(
+          title: 'Error',
+          description: 'An error occurred while updating profile',
+          context: context,
+        );
+      }
+    }
+  }
+
+  void _navigateToUpdateEmail() {
+    Navigator.pushNamed(context, Routes.updateEmail);
+  }
+
+  void _navigateToUpdatePassword() {
+    Navigator.pushNamed(context, Routes.updatePassword);
   }
 
   @override
@@ -70,7 +106,7 @@ class _DeliveryDriverProfileState extends State<DeliveryDriverProfile> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                const TitleBar(title: 'Profile'),
+                const TitleBar(title: 'Edit Profile', hasBackButton: true),
                 Expanded(
                   child: SingleChildScrollView(
                     child: Padding(
@@ -80,15 +116,15 @@ class _DeliveryDriverProfileState extends State<DeliveryDriverProfile> {
                         children: <Widget>[
                           Stack(
                             children: [
-                              const Row(
+                              Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
+                                children: const [
                                   CircleAvatar(
                                     radius: 50,
                                     child: Icon(
                                       Icons.person,
                                       size: 50,
-                                      color: AppColors.secondary,
+                                      color: Colors.grey,
                                     ),
                                   ),
                                 ],
@@ -98,7 +134,9 @@ class _DeliveryDriverProfileState extends State<DeliveryDriverProfile> {
                                 right: 70,
                                 child: IconButton(
                                   icon: const Icon(Icons.edit, color: AppColors.secondary),
-                                  onPressed: _editProfile,
+                                  onPressed: () {
+                                    // No image picker, just a placeholder for future enhancement
+                                  },
                                 ),
                               ),
                             ],
@@ -108,21 +146,45 @@ class _DeliveryDriverProfileState extends State<DeliveryDriverProfile> {
                             controller: _nameController,
                             labelText: 'Name',
                             placeholder: 'John Doe',
-                            editable: false, // Make it non-editable
-                          ),
-                          const SizedBox(height: 15),
-                          Input(
-                            controller: _emailController,
-                            labelText: 'Email',
-                            placeholder: 'john.doe@gmail.com',
-                            editable: false, // Make it non-editable
                           ),
                           const SizedBox(height: 15),
                           Input(
                             controller: _mobileNumberController,
                             labelText: 'Mobile Number',
                             placeholder: '0124567890',
-                            editable: false, // Make it non-editable
+                          ),
+                          const SizedBox(height: 30),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              TextButton(
+                                onPressed: _navigateToUpdateEmail,
+                                child: const Text(
+                                  'Update email',
+                                  style: TextStyle(
+                                    color: Colors.blue,
+                                    fontFamily: 'Poppins_Medium',
+                                    fontSize: 14.0,
+                                  ),
+                                ),
+                              ),
+                              const Text(' or ', style: TextStyle(fontSize: 14.0, fontFamily: 'Poppins_Medium')),
+                              TextButton(
+                                onPressed: _navigateToUpdatePassword,
+                                child: const Text(
+                                  'password here',
+                                  style: TextStyle(
+                                    color: Colors.blue,
+                                    fontFamily: 'Poppins_Medium',
+                                    fontSize: 14.0,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Button(
+                            text: 'Save Changes',
+                            onPressed: () => _editProfile(context),
                           ),
                         ],
                       ),
@@ -134,7 +196,6 @@ class _DeliveryDriverProfileState extends State<DeliveryDriverProfile> {
           }
         },
       ),
-      bottomNavigationBar: const DeliveryBottomNavBar(initialIndex: 2),
     );
   }
 }

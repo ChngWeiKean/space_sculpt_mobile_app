@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:space_sculpt_mobile_app/src/widgets/title.dart';
 import '../../../colors.dart';
 import '../../widgets/toast.dart';
 import '../../services/auth_service.dart';
@@ -89,31 +90,9 @@ class _UpdateEmailState extends State<UpdateEmail> {
       body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
+          const TitleBar(title: 'Update Email', hasBackButton: true),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back, color: AppColors.primary, size: 35.0),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                const Spacer(),
-                const Text(
-                  'Edit Email',
-                  style: TextStyle(
-                    fontFamily: 'Poppins_Bold',
-                    color: AppColors.primary,
-                    fontSize: 40.0,
-                  ),
-                ),
-                const Spacer(flex: 2),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.symmetric(horizontal: 32.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

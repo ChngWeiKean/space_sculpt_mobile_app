@@ -222,6 +222,38 @@ class _DashboardState extends State<Dashboard> {
                         ),
                       ),
                       const SizedBox(height: 20),
+                      ExpansionTile(
+                        title: const Text(
+                          'Your Statistics',
+                          style: TextStyle(
+                            fontSize: 16.0,
+                            fontFamily: 'Poppins_Bold',
+                          ),
+                        ),
+                        backgroundColor: Colors.white, // Background color when expanded
+                        collapsedBackgroundColor: Colors.white, // Background color when collapsed
+                        childrenPadding: EdgeInsets.zero, // Remove padding for children
+                        tilePadding: const EdgeInsets.symmetric(horizontal: 15.0), // Optional: Add padding for title
+                        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                        expandedAlignment: Alignment.centerLeft,
+                        children: <Widget>[
+                          Container(
+                            padding: const EdgeInsets.all(15.0),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            child: const Text(
+                              'Dummy text for Your Statistics...',
+                              style: TextStyle(
+                                fontSize: 14.0,
+                                fontFamily: 'Poppins_Regular',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
                         child: Column(
@@ -280,58 +312,18 @@ class _DashboardState extends State<Dashboard> {
                                         ],
                                       ),
                                       const SizedBox(height: 5),
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.person_outline, color: AppColors.secondary, size: 20),
-                                          const SizedBox(width: 10),
-                                          Text(
-                                            '${order['user']['name']}',
-                                            style: const TextStyle(
-                                              fontSize: 13.0,
-                                              fontFamily: 'Poppins_Regular',
-                                            ),
-                                          ),
-                                          const SizedBox(width: 10),
-                                          const Icon(Icons.phone_outlined, color: AppColors.secondary, size: 20),
-                                          const SizedBox(width: 10),
-                                          Text(
-                                            '${order['user']['contact']}',
-                                            style: const TextStyle(
-                                              fontSize: 13.0,
-                                              fontFamily: 'Poppins_Regular',
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 5),
                                       Text(
-                                        '${order['address']['address']}',
+                                        '${order['user']['name']}',
                                         style: const TextStyle(
-                                          fontSize: 13.0,
+                                          fontSize: 14.0,
                                           fontFamily: 'Poppins_Regular',
                                         ),
-                                        overflow: TextOverflow.ellipsis, // Use ellipsis to indicate overflow
-                                        maxLines: 3, // Set maximum number of lines
-                                      ),
-                                      const Divider(),
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.access_time, color: AppColors.secondary, size: 20),
-                                          const SizedBox(width: 10),
-                                          Text(
-                                            '${order['shipping_date']} at ${order['shipping_time']}',
-                                            style: const TextStyle(
-                                              fontSize: 13.0,
-                                              fontFamily: 'Poppins_Regular',
-                                            ),
-                                          ),
-                                        ],
                                       ),
                                       const SizedBox(height: 5),
                                       Text(
-                                        'Items: ${order['items'].length}',
+                                        'Deliver by: ${order['shipping_date']}',
                                         style: const TextStyle(
-                                          fontSize: 13.0,
+                                          fontSize: 14.0,
                                           fontFamily: 'Poppins_Regular',
                                         ),
                                       ),
@@ -344,12 +336,12 @@ class _DashboardState extends State<Dashboard> {
                         ),
                       ),
                     ],
-                  )
-                )
-              )
-            ]
-          )
-        ]
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       bottomNavigationBar: const DeliveryBottomNavBar(initialIndex: 0),
     );
