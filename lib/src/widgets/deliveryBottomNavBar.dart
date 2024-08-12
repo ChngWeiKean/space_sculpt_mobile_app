@@ -33,10 +33,10 @@ class _DeliveryBottomNavBarState extends State<DeliveryBottomNavBar> {
         Navigator.pushReplacementNamed(context, Routes.deliveryOrderHistory);
         break;
       case 2:
-        Navigator.pushReplacementNamed(context, Routes.customerProfile);
+        Navigator.pushReplacementNamed(context, Routes.deliveryDriverProfile);
         break;
       case 3:
-        Navigator.pushReplacementNamed(context, Routes.customerSettings);
+        Navigator.pushReplacementNamed(context, Routes.deliveryDriverSettings);
         break;
     }
   }
