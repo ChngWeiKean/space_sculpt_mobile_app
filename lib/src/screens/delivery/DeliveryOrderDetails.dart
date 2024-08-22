@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +25,7 @@ class _DeliveryOrderDetailsState extends State<DeliveryOrderDetails> {
   Map<dynamic, dynamic>? _orderData;
   Map<dynamic, dynamic>? _userData;
   Map<dynamic, dynamic>? _customerData;
-  final DeliveryService _deliveryService = DeliveryService();
+  List<String> _uploadedImages = [];
   final List<File> _selectedImages = [];
 
   @override
@@ -54,6 +53,9 @@ class _DeliveryOrderDetailsState extends State<DeliveryOrderDetails> {
     final snapshot = await _dbRef.child('orders/${widget.orderId}').get();
     if (snapshot.exists) {
       _orderData = snapshot.value as Map<dynamic, dynamic>;
+      if (_orderData!['proof_of_delivery'] != null) {
+        _uploadedImages = List<String>.from(_orderData!['proof_of_delivery']);
+      }
       _fetchCustomerData();
       setState(() {});
     }
@@ -83,6 +85,8 @@ class _DeliveryOrderDetailsState extends State<DeliveryOrderDetails> {
 
   String _getCurrentStatus(Map<dynamic, dynamic> status) {
     if (status['Completed'] != null) return 'Completed';
+    if (status['Resolved'] != null) return 'Resolved';
+    if (status['OnHold'] != null) return 'On Hold';
     if (status['Arrived'] != null) return 'Arrived';
     if (status['Shipping'] != null) return 'Shipping';
     if (status['ReadyForShipping'] != null) return 'Ready For Shipping';
@@ -125,6 +129,10 @@ class _DeliveryOrderDetailsState extends State<DeliveryOrderDetails> {
         return '$date - You are currently delivering this order. Please ensure it reaches the customer safely and on time.';
       case 'Arrived':
         return '$date - You have arrived at the destination. Please deliver the package to the customer and confirm the handover.';
+      case 'On Hold':
+        return '$date - The order is currently on hold. Please resolve any issues with the customer and update the status accordingly.';
+      case 'Resolved':
+        return '$date - The order has been resolved. Thank you for your assistance in resolving the customer\'s concerns.';
       case 'Completed':
         return '$date - The delivery has been completed successfully. Thank you for ensuring the customer received their order.';
       default:
@@ -166,22 +174,8 @@ class _DeliveryOrderDetailsState extends State<DeliveryOrderDetails> {
           },
           text: 'Start Shipping',
         );
+
       case 'Shipping':
-        return Button(
-          onPressed: () async {
-            Toast.showSuccessToast(
-                title: "Success",
-                description: "Status updated to Arrived",
-                context: context
-            );
-
-            await DeliveryService().updateStatus(widget.orderId, 'Arrived');
-
-            if (context.mounted) _reloadScreen();
-          },
-          text: 'Confirm Arrival',
-        );
-      case 'Arrived':
         return Column(
           children: [
             _buildImagePicker(),
@@ -198,30 +192,88 @@ class _DeliveryOrderDetailsState extends State<DeliveryOrderDetails> {
 
                 Toast.showSuccessToast(
                     title: "Success",
-                    description: "Status updated to Completed",
+                    description: "Status updated to Arrived",
                     context: context
                 );
 
-                await DeliveryService().updateStatus(widget.orderId, 'Completed');
-                // Save the images to your storage or database here
-                await _uploadImages();
+                await DeliveryService().updateStatus(widget.orderId, 'Arrived');
+                await DeliveryService().uploadProofOfDelivery(widget.orderId, _selectedImages);
 
                 if (context.mounted) _reloadScreen();
               },
-              text: 'Complete Delivery',
+              text: 'Confirm Arrival',
             ),
           ],
         );
+
+      case 'Arrived':
       case 'Completed':
+      case 'On Hold':
+      case 'Resolved':
         return Button(
           onPressed: () {
-            // Logic to view order details
+            // Logic to view proof of delivery
+            _showProofOfDeliveryModal(context);
           },
           text: 'View Proof of Delivery',
         );
+
       default:
         return const Text('Unknown status');
     }
+  }
+
+  void _showProofOfDeliveryModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(0),
+          topRight: Radius.circular(0),
+        ),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(16.0),
+          height: 400.0, // Adjust the height as needed
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Proof of Delivery',
+                style: TextStyle(
+                  fontSize: 18.0,
+                  fontFamily: 'Poppins_SemiBold',
+                ),
+              ),
+              const SizedBox(height: 16.0),
+              Expanded(
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3, // Number of columns in the grid
+                    crossAxisSpacing: 8.0,
+                    mainAxisSpacing: 8.0,
+                  ),
+                  itemCount: _uploadedImages.length,
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () {
+                        // Open full-screen image view
+                        _showFullScreenImage(context, _uploadedImages[index]);
+                      },
+                      child: Image.network(
+                        _uploadedImages[index],
+                        fit: BoxFit.cover,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   // Builds the image picker UI
@@ -264,9 +316,26 @@ class _DeliveryOrderDetailsState extends State<DeliveryOrderDetails> {
     );
   }
 
-  Future<void> _uploadImages() async {
-    // Implement your image upload logic here
-    // For example, upload to Firebase Storage and save the URLs to your database
+  void _showFullScreenImage(BuildContext context, String imageUrl) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+          body: Center(
+            child: Image.network(imageUrl),
+          ),
+        ),
+      ),
+    );
   }
 
   void _reloadScreen() {

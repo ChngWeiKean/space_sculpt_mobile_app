@@ -112,7 +112,7 @@ class _DeliveryOrderHistoryState extends State<DeliveryOrderHistory> {
   String _getCurrentStatus(Map<dynamic, dynamic> status) {
     if (status['Completed'] != null) return 'Completed';
     if (status['Resolved'] != null) return 'Resolved';
-    if (status['OnHold'] != null) return 'Resolving Reports..';
+    if (status['OnHold'] != null) return 'On Hold';
     if (status['Arrived'] != null) return 'Arrived';
     if (status['Shipping'] != null) return 'Shipping';
     if (status['ReadyForShipping'] != null) return 'Ready For Shipping';
