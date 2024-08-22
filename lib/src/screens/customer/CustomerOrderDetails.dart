@@ -38,7 +38,6 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
   Future<void> _fetchData() async {
     Future.wait([
       _fetchOrderData(),
-      _fetchUserData(),
     ]);
   }
 
@@ -46,7 +45,7 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
     final snapshot = await _dbRef.child('orders/${widget.orderId}').get();
     if (snapshot.exists) {
       _orderData = snapshot.value as Map<dynamic, dynamic>;
-      setState(() {});
+      _fetchUserData();
     }
   }
 
@@ -54,16 +53,16 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
     if (_currentUser != null) {
       final snapshot = await _dbRef.child('users/${_currentUser!.uid}').get();
       if (snapshot.exists) {
-        final userData = snapshot.value as Map<dynamic, dynamic>;
-        setState(() {
-          _userData = userData;
-        });
+        _userData = snapshot.value as Map<dynamic, dynamic>;
+        setState(() {});
       }
     }
   }
 
   String _getCurrentStatus(Map<dynamic, dynamic> status) {
     if (status['Completed'] != null) return 'Completed';
+    if (status['Resolved'] != null) return 'Resolved';
+    if (status['OnHold'] != null) return 'Resolving Reports..';
     if (status['Arrived'] != null) return 'Arrived';
     if (status['Shipping'] != null) return 'Shipping';
     if (status['ReadyForShipping'] != null) return 'Ready For Shipping';
@@ -94,6 +93,10 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
         return 'Your order is on the way.';
       case 'Arrived':
         return 'Your order has arrived at the destination.';
+      case 'OnHold':
+        return 'Your order is currently on hold.';
+      case 'Resolved':
+        return 'Your issue has been resolved.';
       case 'Completed':
         return 'Your order is completed.';
       default:
@@ -123,6 +126,10 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
         return '$date - Your order is on its way! Our delivery team is doing their best to bring your package to you as quickly as possible.';
       case 'Arrived':
         return '$date - Your order has arrived at the destination. Please be ready to receive your package.';
+      case 'OnHold':
+        return '$date - Your order is currently on hold. Our team is working to resolve any issues that may have occurred during the delivery process.';
+      case 'Resolved':
+        return '$date - Your issue has been resolved. We apologize for any inconvenience caused and appreciate your patience.';
       case 'Completed':
         return '$date - Your order has been successfully completed and delivered. We appreciate your trust in our service and hope you are satisfied with your purchase.';
       default:
