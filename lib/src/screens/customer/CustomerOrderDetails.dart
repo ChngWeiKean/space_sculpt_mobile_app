@@ -62,7 +62,7 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
   String _getCurrentStatus(Map<dynamic, dynamic> status) {
     if (status['Completed'] != null) return 'Completed';
     if (status['Resolved'] != null) return 'Resolved';
-    if (status['OnHold'] != null) return 'Resolving Reports..';
+    if (status['OnHold'] != null) return 'On Hold';
     if (status['Arrived'] != null) return 'Arrived';
     if (status['Shipping'] != null) return 'Shipping';
     if (status['ReadyForShipping'] != null) return 'Ready For Shipping';
@@ -93,7 +93,7 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
         return 'Your order is on the way.';
       case 'Arrived':
         return 'Your order has arrived at the destination.';
-      case 'OnHold':
+      case 'On Hold':
         return 'Your order is currently on hold.';
       case 'Resolved':
         return 'Your issue has been resolved.';
@@ -126,7 +126,7 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
         return '$date - Your order is on its way! Our delivery team is doing their best to bring your package to you as quickly as possible.';
       case 'Arrived':
         return '$date - Your order has arrived at the destination. Please be ready to receive your package.';
-      case 'OnHold':
+      case 'On Hold':
         return '$date - Your order is currently on hold. Our team is working to resolve any issues that may have occurred during the delivery process.';
       case 'Resolved':
         return '$date - Your issue has been resolved. We apologize for any inconvenience caused and appreciate your patience.';

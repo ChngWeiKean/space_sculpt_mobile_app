@@ -114,34 +114,6 @@ class _DeliveryDriverEditProfileState extends State<DeliveryDriverEditProfile> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
-                          Stack(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  CircleAvatar(
-                                    radius: 50,
-                                    child: Icon(
-                                      Icons.person,
-                                      size: 50,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Positioned(
-                                top: 0,
-                                right: 70,
-                                child: IconButton(
-                                  icon: const Icon(Icons.edit, color: AppColors.secondary),
-                                  onPressed: () {
-                                    // No image picker, just a placeholder for future enhancement
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 30),
                           Input(
                             controller: _nameController,
                             labelText: 'Name',

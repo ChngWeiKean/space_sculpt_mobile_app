@@ -81,7 +81,7 @@ class _CustomerOrdersState extends State<CustomerOrders> {
         case 'To Ship':
           return currentStatus == 'Pending' || currentStatus == 'Ready For Shipping';
         case 'Reports':
-          return currentStatus == 'Resolving Reports..';
+          return currentStatus == 'On Hold';
         case 'To Receive':
           return currentStatus == 'Shipping' || currentStatus == 'Arrived' || currentStatus == 'Resolved';
         case 'To Review':
@@ -95,7 +95,7 @@ class _CustomerOrdersState extends State<CustomerOrders> {
   String _getCurrentStatus(Map<dynamic, dynamic> status) {
     if (status['Completed'] != null) return 'Completed';
     if (status['Resolved'] != null) return 'Resolved';
-    if (status['OnHold'] != null) return 'Resolving Reports..';
+    if (status['OnHold'] != null) return 'On Hold';
     if (status['Arrived'] != null) return 'Arrived';
     if (status['Shipping'] != null) return 'Shipping';
     if (status['ReadyForShipping'] != null) return 'Ready For Shipping';
