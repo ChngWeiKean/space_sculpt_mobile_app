@@ -86,6 +86,10 @@ class _CustomerOrderStatusState extends State<CustomerOrderStatus> {
         return 'Your order is on the way.';
       case 'Arrived':
         return 'Your order has arrived at the destination.';
+      case 'OnHold':
+        return 'Your order is currently on hold.';
+      case 'Resolved':
+        return 'Your issue has been resolved.';
       case 'Completed':
         return 'Your order is completed.';
       default:
@@ -95,6 +99,8 @@ class _CustomerOrderStatusState extends State<CustomerOrderStatus> {
 
   String _getCurrentStatus(Map<dynamic, dynamic> status) {
     if (status['Completed'] != null) return 'Completed';
+    if (status['Resolved'] != null) return 'Resolved';
+    if (status['OnHold'] != null) return 'Resolving Reports..';
     if (status['Arrived'] != null) return 'Arrived';
     if (status['Shipping'] != null) return 'Shipping';
     if (status['ReadyForShipping'] != null) return 'Ready For Shipping';
@@ -104,14 +110,15 @@ class _CustomerOrderStatusState extends State<CustomerOrderStatus> {
 
   String _getDetailedStatusDescription(Map<dynamic, dynamic> status) {
     final String currentStatus = _getCurrentStatus(status);
-    final DateFormat formatter = DateFormat('dd MMM'); // Format for day and month
+    final DateFormat formatter = DateFormat('dd MMM');
     String date = '';
 
     if (status[currentStatus] != null) {
       final DateTime dateTime = DateTime.parse(status[currentStatus]);
       date = formatter.format(dateTime);
     } else if (currentStatus == 'Ready For Shipping') {
-      date = formatter.format(DateTime.parse(_orderData!['shipping_date']));
+      final DateTime dateTime = DateTime.parse(status['ReadyForShipping']);
+      date = formatter.format(dateTime);
     }
 
     switch (currentStatus) {
@@ -123,6 +130,10 @@ class _CustomerOrderStatusState extends State<CustomerOrderStatus> {
         return '$date - Your order is on its way! Our delivery team is doing their best to bring your package to you as quickly as possible.';
       case 'Arrived':
         return '$date - Your order has arrived at the destination. Please be ready to receive your package.';
+      case 'OnHold':
+        return '$date - Your order is currently on hold. Our team is working to resolve any issues that may have occurred during the delivery process.';
+      case 'Resolved':
+        return '$date - Your issue has been resolved. We apologize for any inconvenience caused and appreciate your patience.';
       case 'Completed':
         return '$date - Your order has been successfully completed and delivered. We appreciate your trust in our service and hope you are satisfied with your purchase.';
       default:
@@ -131,18 +142,28 @@ class _CustomerOrderStatusState extends State<CustomerOrderStatus> {
   }
 
   List<Widget> _buildTimeline() {
-    final Map<String, String> statuses = {
-      'Pending': 'Pending',
-      'ReadyForShipping': 'Ready For Shipping', // Displayed as 'Ready For Shipping'
-      'Shipping': 'Shipping',
-      'Arrived': 'Arrived',
-      'Completed': 'Completed'
+    final Map<String, String> baseStatuses = {
+      'Pending': 'Order Placed',
+      'ReadyForShipping': 'Ready For Shipping',
+      'Shipping': 'Shipped',
+      'Arrived': 'Delivered',
     };
 
     final DateFormat formatter = DateFormat('dd MMM yyyy hh:mm a');
+    final Map<String, String> statuses = Map.from(baseStatuses);
+
+    if (_orderData!['completion_status']['Resolved'] != null) {
+      statuses['Resolved'] = 'Resolved';
+    }
+
+    if (_orderData!['completion_status']['OnHold'] != null) {
+      statuses['OnHold'] = 'On Hold';
+    } else {
+      statuses['Completed'] = 'Completed';
+    }
 
     return statuses.keys.map((statusKey) {
-      String displayStatus = statuses[statusKey]!;  // The friendly name
+      String displayStatus = statuses[statusKey]!;
       String date = '';
       bool hasTimestamp = _orderData!['completion_status'][statusKey] != null;
 

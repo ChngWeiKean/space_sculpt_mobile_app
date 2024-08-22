@@ -70,28 +70,32 @@ class _CustomerOrdersState extends State<CustomerOrders> {
 
   List<Map<dynamic, dynamic>> _filterOrders() {
     if (_orders == null) return [];
-    if (_selectedFilter == 'All') return _orders!;
-    if (_selectedFilter == 'To Ship') {
-      return _orders!.where((order) {
-        final status = order['completion_status'] as Map<dynamic, dynamic>;
-        return status['Pending'] != null || status['ReadyForShipping'] != null;
-      }).toList();
-    } else if (_selectedFilter == 'To Receive') {
-      return _orders!.where((order) {
-        final status = order['completion_status'] as Map<dynamic, dynamic>;
-        return status['Shipping'] != null || (status['Arrived'] != null && status['Completed'] == null);
-      }).toList();
-    } else if (_selectedFilter == 'To Review') {
-      return _orders!.where((order) {
-        final status = order['completion_status'] as Map<dynamic, dynamic>;
-        return status['Arrived'] != null && status['Completed'] != null;
-      }).toList();
-    }
-    return [];
+
+    return _orders!.where((order) {
+      final status = order['completion_status'] as Map<dynamic, dynamic>;
+      final currentStatus = _getCurrentStatus(status);
+
+      switch (_selectedFilter) {
+        case 'All':
+          return true;
+        case 'To Ship':
+          return currentStatus == 'Pending' || currentStatus == 'Ready For Shipping';
+        case 'Reports':
+          return currentStatus == 'Resolving Reports..';
+        case 'To Receive':
+          return currentStatus == 'Shipping' || currentStatus == 'Arrived' || currentStatus == 'Resolved';
+        case 'To Review':
+          return currentStatus == 'Arrived' || currentStatus == 'Completed';
+        default:
+          return false;
+      }
+    }).toList();
   }
 
   String _getCurrentStatus(Map<dynamic, dynamic> status) {
     if (status['Completed'] != null) return 'Completed';
+    if (status['Resolved'] != null) return 'Resolved';
+    if (status['OnHold'] != null) return 'Resolving Reports..';
     if (status['Arrived'] != null) return 'Arrived';
     if (status['Shipping'] != null) return 'Shipping';
     if (status['ReadyForShipping'] != null) return 'Ready For Shipping';
@@ -136,14 +140,17 @@ class _CustomerOrdersState extends State<CustomerOrders> {
               const TitleBar(title: 'Orders'),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    _buildFilterButton('All'),
-                    _buildFilterButton('To Ship'),
-                    _buildFilterButton('To Receive'),
-                    _buildFilterButton('To Review'),
-                  ],
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildFilterButton('All'),
+                      _buildFilterButton('To Ship'),
+                      _buildFilterButton('To Receive'),
+                      _buildFilterButton('Reports'),
+                      _buildFilterButton('To Review'),
+                    ],
+                  ),
                 ),
               ),
               Expanded(
