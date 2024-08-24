@@ -42,6 +42,9 @@ class _CustomerCartState extends State<CustomerCart> {
       if (snapshot.exists) {
         _cartData = snapshot.value as Map<dynamic, dynamic>;
         await _fetchCartItems();
+      } else {
+        _cartData = null;
+        await _fetchCartItems();
       }
     }
     setState(() {
@@ -121,6 +124,8 @@ class _CustomerCartState extends State<CustomerCart> {
             onPressed: () async {
               Navigator.of(context).pop();
               await _cartService.removeFromCart(itemId);
+              if (!context.mounted) return;
+              Toast.showSuccessToast(title: 'Success', description: 'Successfully removed item from cart', context: context);
               _fetchCartData();
             },
             child: const Text('Remove'),
@@ -161,7 +166,7 @@ class _CustomerCartState extends State<CustomerCart> {
               ),
               IconButton(
                 icon: const Icon(Icons.close, color: Colors.black, size: 20),
-                onPressed: () => _removeFromCart(item['id']),
+                onPressed: () => _removeFromCart(item['cartId']),
               ),
             ],
           ),
@@ -213,7 +218,7 @@ class _CustomerCartState extends State<CustomerCart> {
                         icon: const Icon(Icons.remove, size: 15),
                         onPressed: () {
                           if (item['quantity'] > 1) {
-                            _updateQuantity(item['id'], item['quantity'] - 1);
+                            _updateQuantity(item['cartId'], item['quantity'] - 1);
                           }
                         },
                       ),
@@ -221,7 +226,16 @@ class _CustomerCartState extends State<CustomerCart> {
                       IconButton(
                         icon: const Icon(Icons.add, size: 15),
                         onPressed: () {
-                          _updateQuantity(item['id'], item['quantity'] + 1);
+                          // Check if the quantity exceeds the available inventory
+                          if (int.parse(item['quantity'].toString()) >= int.parse(item['inventory'].toString())) {
+                            Toast.showInfoToast(
+                              title: 'Out of Stock',
+                              description: 'You have reached the maximum quantity available for this item.',
+                              context: context,
+                            );
+                            return;
+                          }
+                          _updateQuantity(item['cartId'], item['quantity'] + 1);
                         },
                       ),
                     ],

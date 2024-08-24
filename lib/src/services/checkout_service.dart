@@ -118,10 +118,10 @@ class CheckoutService {
       // Group items by furniture ID
       final Map<String, dynamic> groupedItems = {};
       for (final item in items) {
-        final itemId = item['id'].toString();
-        final variantId = item['variantId'].toString();
-        final quantity = int.parse(item['quantity'].toString());
-        final price = double.parse(item['price'].toString());
+        final String itemId = item['id'].toString();
+        final String variantId = item['variantId'].toString();
+        final int quantity = int.parse(item['quantity'].toString());
+        final double price = double.parse(item['price'].toString());
 
         if (!groupedItems.containsKey(itemId)) {
           groupedItems[itemId] = {
@@ -137,16 +137,18 @@ class CheckoutService {
         }
       }
 
-      // Store order details in furniture/orders
+      // Store order details in furniture/orders and deduct inventory
       try {
-        for (final itemId in groupedItems.keys) {
-          final item = groupedItems[itemId];
+        for (final String itemId in groupedItems.keys) {
+          final Map<String, dynamic> item = groupedItems[itemId];
           final DatabaseReference furnitureOrderRef = _dbRef.child('furniture/$itemId/orders');
           final DataSnapshot furnitureOrderSnapshot = await furnitureOrderRef.get();
           List<dynamic> furnitureOrders = [];
+
           if (furnitureOrderSnapshot.exists) {
             furnitureOrders = List<dynamic>.from(furnitureOrderSnapshot.value as List);
           }
+
           furnitureOrders.add({
             'order_id': newOrderId,
             'created_on': DateTime.now().toIso8601String(),
@@ -156,10 +158,56 @@ class CheckoutService {
             'selected_variants': item['selected_variants'],
             'price': item['price']
           });
+
           await furnitureOrderRef.set(furnitureOrders);
+
+          // Deduct from the inventory of the furniture based on the variantId
+          for (final String variantId in item['selected_variants']) {
+            final DatabaseReference inventoryRef = _dbRef.child('furniture/$itemId/variants/$variantId/inventory');
+            final DataSnapshot inventorySnapshot = await inventoryRef.get();
+
+            if (inventorySnapshot.exists) {
+              // Log the inventory value and type
+              print("Inventory before parsing: ${inventorySnapshot.value} (${inventorySnapshot.value.runtimeType})");
+
+              // Ensure the inventory is treated as an int
+              int currentInventory = 0;
+
+              if (inventorySnapshot.value != null) {
+                if (inventorySnapshot.value is int) {
+                  currentInventory = inventorySnapshot.value as int;
+                } else if (inventorySnapshot.value is String) {
+                  currentInventory = int.tryParse(inventorySnapshot.value as String) ?? 0;
+                } else {
+                  throw Exception('Unsupported type for inventory value: ${inventorySnapshot.value.runtimeType}');
+                }
+              }
+
+              // Log the quantity value and type
+              print("Quantity before parsing: ${item['quantity']} (${item['quantity'].runtimeType})");
+
+              // Ensure the quantity is treated as an int
+              int itemQuantity = 0;
+
+              if (item['quantity'] != null) {
+                if (item['quantity'] is int) {
+                  itemQuantity = item['quantity'] as int;
+                } else if (item['quantity'] is String) {
+                  itemQuantity = int.tryParse(item['quantity'] as String) ?? 0;
+                } else {
+                  throw Exception('Unsupported type for quantity value: ${item['quantity'].runtimeType}');
+                }
+              }
+
+              final int newInventory = currentInventory - itemQuantity;
+              print("New inventory: $newInventory");
+
+              await inventoryRef.set(newInventory);
+            }
+          }
         }
       } catch (error) {
-        print('Error adding order to furniture: $error');
+        print('Error adding order to furniture or updating inventory: $error');
       }
 
       // Clear user cart
