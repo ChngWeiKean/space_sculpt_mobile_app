@@ -230,7 +230,9 @@ class _CustomerPaymentState extends State<CustomerPayment> {
       'shipping_time': _selectedTime,
     };
 
-    print('Order Data: $data');
+    for (var item in data['items']) {
+      print(item['variantId'].toString());
+    }
     await CheckoutService().placeOrder(data);
 
     if (!context.mounted) return;
