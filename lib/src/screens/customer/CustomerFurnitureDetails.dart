@@ -6,6 +6,7 @@ import '../../../colors.dart';
 import '../../widgets/title.dart';
 import '../../services/cart_service.dart';
 import '../../widgets/toast.dart';
+import '../../widgets/ARModelViewer.dart';
 
 class CustomerFurnitureDetails extends StatefulWidget {
   final String id;
@@ -21,7 +22,7 @@ class _CustomerFurnitureDetailsState extends State<CustomerFurnitureDetails> {
   late DatabaseReference _dbRef;
   Map<dynamic, dynamic>? _furnitureData;
   String? _mainImage;
-  String? _currentModelUrl;
+  late String _currentModelUrl;
   String? _selectedVariant;
   bool _isInCart = false;
   List<Map<dynamic, dynamic>> _variants = [];
@@ -551,7 +552,15 @@ class _CustomerFurnitureDetailsState extends State<CustomerFurnitureDetails> {
                     IconButton(
                       icon: const Icon(Icons.view_in_ar,
                           color: AppColors.secondary, size: 30),
-                      onPressed: _show3DModelModal,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ARModelViewer(modelUrl: _currentModelUrl),
+                          ),
+                        );
+                      },
+                      // onPressed: _show3DModelModal,
                     ),
                     _furnitureData?['discounted_price'] != null
                         ? Row(

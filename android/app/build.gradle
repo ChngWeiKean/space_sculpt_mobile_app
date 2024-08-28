@@ -41,7 +41,7 @@ android {
         applicationId = "com.example.space_sculpt_mobile_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-        minSdkVersion 23
+        minSdkVersion 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
@@ -58,6 +58,8 @@ android {
 
 dependencies {
     implementation 'com.google.guava:guava:28.2-android'
+    // Provides ARCore Session and related resources.
+    implementation 'com.google.ar:core:1.33.0'
 }
 
 // I put this block in both build.gradle and android/build.gradle... no clue what it does though...

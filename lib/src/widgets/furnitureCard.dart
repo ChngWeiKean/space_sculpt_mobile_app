@@ -48,9 +48,9 @@ class FurnitureCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(
-                height: 130,
+                height: 150,
                 child: data['mainImage'] != null
-                    ? Image.network(data['mainImage'], height: 130, fit: BoxFit.contain)
+                    ? Image.network(data['mainImage'], height: 140, fit: BoxFit.contain)
                     : const Center(child: Text('No Image')),
               ),
               const SizedBox(height: 5),

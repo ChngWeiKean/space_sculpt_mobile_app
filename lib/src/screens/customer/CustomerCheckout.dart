@@ -442,7 +442,7 @@ class _CustomerCheckoutState extends State<CustomerCheckout> {
       if (double.parse(voucher['minimum_spend']) > double.parse(_subtotal)) {
         return {'valid': false, 'message': 'Minimum spend of RM${voucher['minimum_spend']} is required to use this voucher.'};
       }
-      if (voucher['expiry_date'] < DateTime.now().toIso8601String().split('T')[0]) {
+      if (DateTime.parse(voucher['expiry_date']).isBefore(DateTime.now())) {
         return {'valid': false, 'message': 'This voucher has expired.'};
       }
       if (voucher['customer_eligibility'] == 'new' && _userData['orders'].isNotEmpty) {
@@ -643,7 +643,7 @@ class _CustomerCheckoutState extends State<CustomerCheckout> {
 
   void _filterAvailableItems() {
     availableItems = widget.cartItems.where((item) {
-      return int.parse(item['inventory']) > 0;
+      return int.parse(item['inventory'].toString()) > 0;
     }).toList();
   }
 
@@ -733,6 +733,7 @@ class _CustomerCheckoutState extends State<CustomerCheckout> {
                                               style: const TextStyle(
                                                 fontSize: 14,
                                                 fontFamily: 'Poppins_Bold',
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
                                           ),
@@ -752,6 +753,7 @@ class _CustomerCheckoutState extends State<CustomerCheckout> {
                                         style: const TextStyle(
                                           fontSize: 11,
                                           fontFamily: 'Poppins_Regular',
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ],

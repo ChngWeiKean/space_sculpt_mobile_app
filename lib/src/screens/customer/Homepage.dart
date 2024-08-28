@@ -270,7 +270,7 @@ class _HomepageState extends State<Homepage> {
                                   crossAxisCount: 2, // 2 cards per row
                                   crossAxisSpacing: 8.0,
                                   mainAxisSpacing: 8.0,
-                                  childAspectRatio: 0.8,
+                                  childAspectRatio: 0.7,
                                 ),
                                 itemCount: _topFurniture.length,
                                 itemBuilder: (context, index) {

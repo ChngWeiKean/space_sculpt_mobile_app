@@ -494,7 +494,7 @@ class _CustomerCategoryDetailsState extends State<CustomerCategoryDetails> {
                   crossAxisCount: 2, // 2 cards per row
                   crossAxisSpacing: 8.0,
                   mainAxisSpacing: 8.0,
-                  childAspectRatio: 0.8,
+                  childAspectRatio: 0.7,
                 ),
                 itemCount: _filteredFurnitureList.length,
                 itemBuilder: (context, index) {

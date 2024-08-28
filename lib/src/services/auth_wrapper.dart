@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import '../../routes.dart';
 import '../screens/auth/Login.dart';
 import '../screens/customer/Homepage.dart';
 import '../screens/delivery/Dashboard.dart';
@@ -26,11 +27,24 @@ class AuthenticationWrapper extends StatelessWidget {
               }
               if (snapshot.hasData && snapshot.data != null) {
                 final userData = snapshot.data!.value as Map<dynamic, dynamic>;
-                if (userData['role'] == 'Customer') {
-                  return const Homepage();
-                } else {
-                  return const Dashboard();
-                }
+
+                // Auto-login and redirect based on user role
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (userData['role'] == 'Customer') {
+                    Navigator.pushReplacementNamed(
+                      context,
+                      Routes.homepage,
+                    );
+                  } else {
+                    Navigator.pushReplacementNamed(
+                      context,
+                      Routes.dashboard,
+                    );
+                  }
+                });
+
+                // Placeholder widget while navigating
+                return const Center(child: CircularProgressIndicator());
               }
               return const Login();
             },

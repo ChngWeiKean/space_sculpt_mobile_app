@@ -20,6 +20,7 @@ class _CustomerOrdersState extends State<CustomerOrders> {
   Map<dynamic, dynamic>? _userData;
   List<Map<dynamic, dynamic>>? _orders;
   String _selectedFilter = 'All';
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -50,6 +51,7 @@ class _CustomerOrdersState extends State<CustomerOrders> {
 
   Future<void> _fetchOrders() async {
     if (_currentUser != null && _userData != null) {
+      _isLoading = true;
       final orderIds = _userData!['orders'] as List<dynamic>;
 
       final List<Map<dynamic, dynamic>> orders = [];
@@ -62,8 +64,17 @@ class _CustomerOrdersState extends State<CustomerOrders> {
           orders.add(data);
         }
       }
+
+      // Sort orders by date
+      orders.sort((a, b) {
+        final aDate = DateTime.parse(a['created_on']);
+        final bDate = DateTime.parse(b['created_on']);
+        return bDate.compareTo(aDate);
+      });
+
       setState(() {
         _orders = orders;
+        _isLoading = false;
       });
     }
   }
@@ -73,6 +84,12 @@ class _CustomerOrdersState extends State<CustomerOrders> {
 
     return _orders!.where((order) {
       final status = order['completion_status'] as Map<dynamic, dynamic>;
+      // Sort the status by the latest status
+      status.keys.toList().sort((a, b) {
+        final aDate = DateTime.parse(status[a]);
+        final bDate = DateTime.parse(status[b]);
+        return bDate.compareTo(aDate);
+      });
       final currentStatus = _getCurrentStatus(status);
 
       switch (_selectedFilter) {
@@ -85,7 +102,7 @@ class _CustomerOrdersState extends State<CustomerOrders> {
         case 'To Receive':
           return currentStatus == 'Shipping' || currentStatus == 'Arrived' || currentStatus == 'Resolved';
         case 'To Review':
-          return currentStatus == 'Arrived' || currentStatus == 'Completed';
+          return currentStatus == 'Completed';
         default:
           return false;
       }
@@ -114,7 +131,9 @@ class _CustomerOrdersState extends State<CustomerOrders> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _orders == null
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _orders == null
           ? Center(
           child: Padding(
             padding: const EdgeInsets.all(30.0),

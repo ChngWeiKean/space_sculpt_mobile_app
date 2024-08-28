@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:intl/intl.dart';
+import 'package:space_sculpt_mobile_app/src/services/delivery_service.dart';
+import 'package:space_sculpt_mobile_app/src/widgets/button.dart';
 import 'package:space_sculpt_mobile_app/src/widgets/title.dart';
+import 'package:space_sculpt_mobile_app/src/widgets/toast.dart';
 import '../../../colors.dart';
 import '../../../routes.dart';
 
@@ -16,6 +19,7 @@ class CustomerOrderDetails extends StatefulWidget {
 }
 
 class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
+  final TextEditingController _descriptionController = TextEditingController();
   late DatabaseReference _dbRef;
   late User _currentUser;
   Map<dynamic, dynamic>? _orderData;
@@ -32,6 +36,7 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
   @override
   void dispose() {
     _dbRef.onDisconnect();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -45,6 +50,12 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
     final snapshot = await _dbRef.child('orders/${widget.orderId}').get();
     if (snapshot.exists) {
       _orderData = snapshot.value as Map<dynamic, dynamic>;
+      _orderData!['items'] = _orderData!['items'].map((item) {
+        return {
+          ...item,
+          'isChecked': false,
+        };
+      }).toList();
       _fetchUserData();
     }
   }
@@ -60,6 +71,12 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
   }
 
   String _getCurrentStatus(Map<dynamic, dynamic> status) {
+    status.keys.toList().sort((a, b) {
+      final aDate = DateTime.parse(status[a]);
+      final bDate = DateTime.parse(status[b]);
+      return bDate.compareTo(aDate);
+    });
+
     if (status['Completed'] != null) return 'Completed';
     if (status['Resolved'] != null) return 'Resolved';
     if (status['OnHold'] != null) return 'On Hold';
@@ -104,6 +121,256 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
     }
   }
 
+  Future<void> _completeOrder() async {
+    // Check if all items are checked
+    if (_orderData!['items'].every((item) => item['isChecked'] == true)) {
+      await DeliveryService().updateStatus(widget.orderId, 'Completed');
+    } else {
+      Toast.showErrorToast(
+          title: "Error completing order",
+          description: "Please check all items before completing order",
+          context: context);
+    }
+  }
+
+  void _openReportDeliveryModal(BuildContext context, dynamic items) {
+    // Safely convert items to List<Map<String, dynamic>>
+    final List<Map<String, dynamic>> orderItems = (items as List<dynamic>).map((item) {
+      return Map<String, dynamic>.from(item as Map); // Ensure each item is a Map<String, dynamic>
+    }).toList();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(0),
+          topRight: Radius.circular(0),
+        ),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return Padding(
+              padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 32.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Report Incomplete Delivery / Damaged Products',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                  const Divider(thickness: 1, color: Colors.black26),
+                  Expanded(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: orderItems.length,
+                      itemBuilder: (context, index) {
+                        final item = orderItems[index];
+                        final isChecked = item['isChecked'] ?? false;
+
+                        // Calculate the final price considering any discounts
+                        final price = double.tryParse(item['price']) ?? 0.0;
+                        final discount = double.tryParse(item['discount']) ?? 0.0;
+                        final finalPrice = price * (1 - discount / 100);
+
+                        return isChecked
+                            ? Container()
+                            : Column(
+                          children: [
+                            ListTile(
+                              title: Row(
+                                children: [
+                                  Text(
+                                    item['name'] ?? '',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              subtitle: Row(
+                                children: [
+                                  Text(
+                                    item['color'] ?? '',
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'RM ${finalPrice.toStringAsFixed(2)} x ${item['quantity']}',
+                                    style: const TextStyle(
+                                      color: AppColors.secondary,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ]
+                              ),
+                              trailing: DropdownButton<String>(
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 13,
+                                ),
+                                hint: const Text('Select a report type'),
+                                value: item['reportType'],
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'damaged',
+                                    child: Text('Damaged Product'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'missing',
+                                    child: Text('Missing Product'),
+                                  ),
+                                ],
+                                onChanged: (value) {
+                                  print('Selected report type: $value');
+                                  setState(() {
+                                    orderItems[index]['reportType'] = value;
+                                  });
+                                },
+                              ),
+                            ),
+                            const Divider(),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  if (orderItems.every((item) => item['isChecked'] == true))
+                    const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text(
+                        'All items are checked. Please uncheck the items that are damaged or not delivered.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  if (orderItems.any((item) => item['isChecked'] == false))
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: TextFormField(
+                        controller: _descriptionController,
+                        decoration: const InputDecoration(
+                          labelText: 'Report Description',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.all(8),
+                        ),
+                        maxLines: 4,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Report description cannot be empty';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        if (orderItems.any((item) => item['isChecked'] == false))
+                          Button(
+                              text: "Report",
+                              width: 150,
+                              onPressed: () {
+                                handleReportDelivery(orderItems);
+                              }
+                          ),
+                        const SizedBox(width: 8),
+                        Button(
+                          text: "Cancel",
+                          color: AppColors.error,
+                          width: 150,
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> handleReportDelivery(List<Map<String, dynamic>> orderItems) async {
+    final String reportDescription = _descriptionController.text;
+
+    if (reportDescription.isEmpty) {
+      // Show error toast before async operation
+      Toast.showErrorToast(
+        title: 'Error reporting delivery',
+        description: 'Please provide a description for the report',
+        context: context,
+      );
+      return;
+    }
+
+    final List<Map<String, dynamic>> reportedItems = orderItems.where((item) {
+      final reportType = item['reportType'];
+      return reportType != null && reportType.isNotEmpty && !item['isChecked'];
+    }).toList();
+
+    // Check if every non-checked item has a reportType
+    final hasMissingReportType = orderItems.any((item) {
+      return !item['isChecked'] && (item['reportType'] == null || item['reportType']!.isEmpty);
+    });
+
+    if (hasMissingReportType) {
+      // Show error toast before async operation
+      Toast.showErrorToast(
+        title: 'Error reporting delivery',
+        description: 'Please select a report type for each item that is not checked',
+        context: context,
+      );
+      return;
+    }
+
+    final Map<String, dynamic> reportData = {
+      'orderID': widget.orderId,
+      'reportedItems': reportedItems,
+      'description': reportDescription,
+    };
+
+    // Store necessary context-related actions before async
+    final NavigatorState navigator = Navigator.of(context);
+    final BuildContext currentContext = context;
+
+    try {
+      await DeliveryService().reportDelivery(reportData);
+
+      // Pop the screen and show success toast
+      navigator.pop();
+
+      if (!currentContext.mounted) return;
+
+      Toast.showSuccessToast(
+        title: 'Delivery reported',
+        description: 'Your report has been submitted successfully',
+        context: currentContext,
+      );
+    } catch (error) {
+      // Show error toast in case of failure
+      Toast.showErrorToast(
+        title: 'Error reporting delivery',
+        description: 'An error occurred while reporting the delivery. Please try again later.',
+        context: currentContext,
+      );
+    }
+  }
+
   String _getDetailedStatusDescription(Map<dynamic, dynamic> status) {
     final String currentStatus = _getCurrentStatus(status);
     final DateFormat formatter = DateFormat('dd MMM'); // Format for day and month
@@ -114,6 +381,9 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
       date = formatter.format(dateTime);
     } else if (currentStatus == 'Ready For Shipping') {
       final DateTime dateTime = DateTime.parse(status['ReadyForShipping']);
+      date = formatter.format(dateTime);
+    } else if (currentStatus == 'On Hold') {
+      final DateTime dateTime = DateTime.parse(status['OnHold']);
       date = formatter.format(dateTime);
     }
 
@@ -147,7 +417,7 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
           children: [
             const TitleBar(title: 'Order Details', hasBackButton: true),
             Container(
-              height: 100,
+              height: 120,
               width: double.infinity,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -299,6 +569,15 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
                                 ),
                               ),
                             ),
+                            if (_getCurrentStatus(_orderData!['completion_status']) == 'Arrived')
+                              Checkbox(
+                                value: item['isChecked'] ?? false,
+                                onChanged: (bool? newValue) {
+                                  setState(() {
+                                    item['isChecked'] = newValue ?? false;
+                                  });
+                                },
+                              ),
                           ],
                         ),
                         subtitle: Column(
@@ -474,11 +753,38 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
               ),
             ),
             const SizedBox(height: 20),
-            Container(
-              width: double.infinity,
-              color: Colors.white,
+            if (_getCurrentStatus(_orderData!['completion_status']) == 'Arrived')
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Button(
+                  text: 'Complete Order',
+                  onPressed: () { _completeOrder(); },
+                ),
+              ),
+            const SizedBox(height: 20),
+            if (_getCurrentStatus(_orderData!['completion_status']) == 'Arrived')
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Button(
+                  text: 'Report Delivery',
+                  color: AppColors.error,
+                  onPressed: () {
+                    _openReportDeliveryModal(context, _orderData!['items']);
+                  },
+                ),
+              ),
+            if (_getCurrentStatus(_orderData!['completion_status']) == 'Resolved')
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Button(
+                  text: 'Resolved - Report Delivery',
+                  color: AppColors.warning,
+                  onPressed: () {
 
-            )
+                  },
+                ),
+              ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
