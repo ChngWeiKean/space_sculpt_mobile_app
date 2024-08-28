@@ -98,6 +98,12 @@ class _CustomerOrderStatusState extends State<CustomerOrderStatus> {
   }
 
   String _getCurrentStatus(Map<dynamic, dynamic> status) {
+    status.keys.toList().sort((a, b) {
+      final aDate = DateTime.parse(status[a]);
+      final bDate = DateTime.parse(status[b]);
+      return bDate.compareTo(aDate);
+    });
+
     if (status['Completed'] != null) return 'Completed';
     if (status['Resolved'] != null) return 'Resolved';
     if (status['OnHold'] != null) return 'On Hold';
@@ -118,6 +124,9 @@ class _CustomerOrderStatusState extends State<CustomerOrderStatus> {
       date = formatter.format(dateTime);
     } else if (currentStatus == 'Ready For Shipping') {
       final DateTime dateTime = DateTime.parse(status['ReadyForShipping']);
+      date = formatter.format(dateTime);
+    } else if (currentStatus == 'On Hold') {
+      final DateTime dateTime = DateTime.parse(status['OnHold']);
       date = formatter.format(dateTime);
     }
 
@@ -172,6 +181,8 @@ class _CustomerOrderStatusState extends State<CustomerOrderStatus> {
         date = formatter.format(dateTime);
       }
 
+      final bool isOnHold = statusKey == 'OnHold';
+
       return TimelineTile(
         nodeAlign: TimelineNodeAlign.start,
         contents: Container(
@@ -181,26 +192,26 @@ class _CustomerOrderStatusState extends State<CustomerOrderStatus> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      displayStatus,
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 13.0,
-                        fontFamily: 'Poppins_Bold',
-                      ),
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Text(
+                    displayStatus,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 13.0,
+                      fontFamily: 'Poppins_Bold',
                     ),
-                    const SizedBox(width: 10),
-                    Text(
-                      date,
-                      style: TextStyle(
-                        color: Colors.grey[700],
-                        fontSize: 13.0,
-                        fontFamily: 'Poppins_Bold',
-                      ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    date,
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontSize: 13.0,
+                      fontFamily: 'Poppins_Bold',
                     ),
-                  ]
+                  ),
+                ],
               ),
               const SizedBox(height: 5),
               if (hasTimestamp)
@@ -221,7 +232,9 @@ class _CustomerOrderStatusState extends State<CustomerOrderStatus> {
         ),
         node: TimelineNode(
           indicator: DotIndicator(
-            color: hasTimestamp ? AppColors.secondary : Colors.grey,
+            color: isOnHold
+                ? Colors.red
+                : hasTimestamp ? AppColors.secondary : Colors.grey,
             size: 16.0,
           ),
           startConnector: statuses.keys.first == statusKey
@@ -232,7 +245,9 @@ class _CustomerOrderStatusState extends State<CustomerOrderStatus> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Colors.blue, Colors.lightBlueAccent[400]!],
+                colors: isOnHold
+                    ? [Colors.red, Colors.redAccent]
+                    : [Colors.blue, Colors.lightBlueAccent[400]!],
               ),
             ),
           )
@@ -245,7 +260,9 @@ class _CustomerOrderStatusState extends State<CustomerOrderStatus> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Colors.blue, Colors.lightBlueAccent[400]!],
+                colors: isOnHold
+                    ? [Colors.red, Colors.redAccent]
+                    : [Colors.blue, Colors.lightBlueAccent[400]!],
               ),
             ),
           )
@@ -265,7 +282,7 @@ class _CustomerOrderStatusState extends State<CustomerOrderStatus> {
           children: [
             const TitleBar(title: 'Delivery Details', hasBackButton: true),
             Container(
-              height: 100,
+              height: 120,
               width: double.infinity,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -303,7 +320,7 @@ class _CustomerOrderStatusState extends State<CustomerOrderStatus> {
             ),
             const SizedBox(height: 20),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              padding: const EdgeInsets.only(left: 20.0, right: 10.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: _buildTimeline(),

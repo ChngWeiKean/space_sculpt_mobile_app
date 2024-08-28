@@ -76,6 +76,9 @@ class _DeliveryOrderHistoryState extends State<DeliveryOrderHistory> {
       // Filter out any empty maps (orders that did not exist)
       final validOrders = orders.where((order) => order.isNotEmpty).toList();
 
+      // Sort orders by date
+      validOrders.sort((b, a) => a['shipping_date'].compareTo(b['shipping_date']));
+
       setState(() {
         _orders = validOrders;
         _sortOrders();
@@ -98,7 +101,7 @@ class _DeliveryOrderHistoryState extends State<DeliveryOrderHistory> {
         _orders!.sort((a, b) => a['user']['contact'].compareTo(b['user']['contact']));
         break;
       case 'Date':
-        _orders!.sort((a, b) => a['shipping_date'].compareTo(b['shipping_date']));
+        _orders!.sort((b, a) => a['shipping_date'].compareTo(b['shipping_date']));
         break;
       case 'Time':
         _orders!.sort((a, b) => a['shipping_time'].compareTo(b['shipping_time']));

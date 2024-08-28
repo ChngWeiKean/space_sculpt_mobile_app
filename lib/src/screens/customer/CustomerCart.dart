@@ -90,7 +90,7 @@ class _CustomerCartState extends State<CustomerCart> {
 
   void _handleCheckout() {
     List<Map<dynamic, dynamic>> availableItems = _cartItems.where((item) {
-      return int.parse(item['inventory']) > 0;
+      return int.parse(item['inventory'].toString()) > 0;
     }).toList();
 
     print(availableItems.length);

@@ -265,7 +265,7 @@ class _DeliveryOrderStatusState extends State<DeliveryOrderStatus> {
           children: [
             const TitleBar(title: 'Delivery Details', hasBackButton: true),
             Container(
-              height: 100,
+              height: 120,
               width: double.infinity,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -303,7 +303,7 @@ class _DeliveryOrderStatusState extends State<DeliveryOrderStatus> {
             ),
             const SizedBox(height: 20),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              padding: const EdgeInsets.only(left: 20.0, right: 10.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: _buildTimeline(),
