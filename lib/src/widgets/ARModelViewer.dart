@@ -1,217 +1,4 @@
-// import 'package:ar_flutter_plugin/ar_flutter_plugin.dart';
-// import 'package:ar_flutter_plugin/datatypes/config_planedetection.dart';
-// import 'package:ar_flutter_plugin/datatypes/hittest_result_types.dart';
-// import 'package:ar_flutter_plugin/datatypes/node_types.dart';
-// import 'package:ar_flutter_plugin/managers/ar_anchor_manager.dart';
-// import 'package:ar_flutter_plugin/managers/ar_location_manager.dart';
-// import 'package:ar_flutter_plugin/managers/ar_object_manager.dart';
-// import 'package:ar_flutter_plugin/managers/ar_session_manager.dart';
-// import 'package:ar_flutter_plugin/models/ar_anchor.dart';
-// import 'package:ar_flutter_plugin/models/ar_hittest_result.dart';
-// import 'package:ar_flutter_plugin/models/ar_node.dart';
-// import 'package:flutter/material.dart';
-// import 'package:vector_math/vector_math_64.dart';
-//
-// class ARModelViewer extends StatefulWidget {
-//   final String modelUrl; // URL to the .glTF model in Firebase Storage
-//
-//   ARModelViewer({required this.modelUrl, Key? key}) : super(key: key);
-//
-//   @override
-//   _ARModelViewerState createState() => _ARModelViewerState();
-// }
-//
-// class _ARModelViewerState extends State<ARModelViewer> {
-//   ARSessionManager? arSessionManager;
-//   ARObjectManager? arObjectManager;
-//   ARAnchorManager? arAnchorManager;
-//   List<ARNode> nodes = [];
-//   List<ARAnchor> anchors = [];
-//   DateTime? touchStartTime;
-//   String? touchedNodeName;
-//   final Duration longPressDuration = Duration(milliseconds: 1000);
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('AR Model Viewer'),
-//       ),
-//       body: Stack(
-//         children: [
-//           ARView(
-//             onARViewCreated: onARViewCreated,
-//             planeDetectionConfig: PlaneDetectionConfig.horizontalAndVertical,
-//           ),
-//           Align(
-//             alignment: FractionalOffset.bottomCenter,
-//             child: Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//               children: [
-//                 ElevatedButton(
-//                   onPressed: onRemoveEverything,
-//                   child: Text("Remove Everything"),
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-//
-//   void onARViewCreated(
-//       ARSessionManager arSessionManager,
-//       ARObjectManager arObjectManager,
-//       ARAnchorManager arAnchorManager,
-//       ARLocationManager arLocationManager) {
-//     this.arSessionManager = arSessionManager;
-//     this.arObjectManager = arObjectManager;
-//     this.arAnchorManager = arAnchorManager;
-//
-//     this.arSessionManager!.onInitialize(
-//       showFeaturePoints: false,
-//       showPlanes: true,
-//       customPlaneTexturePath: "Images/triangle.png",
-//       showWorldOrigin: true,
-//       handlePans: true,
-//       handleRotation: true,
-//     );
-//     this.arObjectManager!.onInitialize();
-//
-//     this.arObjectManager!.onPanStart = onPanStarted;
-//     this.arObjectManager!.onPanChange = onPanChanged;
-//     this.arObjectManager!.onPanEnd = onPanEnded;
-//     this.arObjectManager!.onRotationStart = onRotationStarted;
-//     this.arObjectManager!.onRotationChange = onRotationChanged;
-//     this.arObjectManager!.onRotationEnd = onRotationEnded;
-//
-//     this.arObjectManager!.onLongPress = onLongPressed;
-//     this.arObjectManager!.onTouchStart = onTouchStart;
-//     this.arObjectManager!.onTouchEnd = onTouchEnd;
-//     this.arObjectManager!.onTouchMove = onTouchMove;
-//
-//     _addModelToScene();
-//   }
-//
-//   Future<void> _addModelToScene() async {
-//     try {
-//       final newNode = ARNode(
-//         type: NodeType.webGLB, // Adjust as needed
-//         uri: widget.modelUrl,
-//         scale: Vector3(0.2, 0.2, 0.2),
-//         position: Vector3(0.0, 0.0, 0.0),
-//         rotation: Vector4(1.0, 0.0, 0.0, 0.0),
-//       );
-//
-//       bool? didAddNode = await arObjectManager!.addNode(newNode);
-//       if (didAddNode != null && didAddNode) {
-//         nodes.add(newNode);
-//       }
-//     } catch (e) {
-//       print("Error adding model to scene: $e");
-//     }
-//   }
-//
-//   Future<void> onRemoveEverything() async {
-//     nodes.forEach((node) {
-//       arObjectManager!.removeNode(node);
-//     });
-//     anchors.forEach((anchor) {
-//       arAnchorManager!.removeAnchor(anchor);
-//     });
-//     anchors = [];
-//     nodes = [];
-//   }
-//
-//   void onTouchStart(String nodeName) {
-//     touchStartTime = DateTime.now();
-//     touchedNodeName = nodeName;
-//     print("Touch started on node $nodeName");
-//   }
-//
-//   void onTouchMove(String nodeName) {
-//     if (touchedNodeName == nodeName && touchStartTime != null) {
-//       final currentTime = DateTime.now();
-//       final touchDuration = currentTime.difference(touchStartTime!);
-//
-//       if (touchDuration > longPressDuration) {
-//         // If the touch has been held long enough, consider it a long press
-//         onLongPressed(nodeName);
-//         touchStartTime = null; // Reset the timer
-//       }
-//     }
-//   }
-//
-//   void onTouchEnd(String nodeName) {
-//     if (touchedNodeName == nodeName && touchStartTime != null) {
-//       final currentTime = DateTime.now();
-//       final touchDuration = currentTime.difference(touchStartTime!);
-//
-//       if (touchDuration <= longPressDuration) {
-//         // If the touch is released before the long press duration, consider it a pan
-//         onPanEnded(nodeName, Matrix4.identity()); // Pass the actual transform if needed
-//       }
-//
-//       touchStartTime = null; // Reset the timer
-//       touchedNodeName = null;
-//     }
-//   }
-//
-//   void onLongPressed(String nodeName) {
-//     print("Long pressed node $nodeName");
-//
-//     final pannedNode = nodes.firstWhere((element) => element.name == nodeName);
-//
-//     // Apply the long press effect
-//     const double scaleFactor = 1.2; // Scale up by 20%
-//     const double floatOffset = 0.1; // Float height offset
-//
-//     // Create a new transform with scaled and floated position
-//     Matrix4 newTransform = Matrix4.compose(
-//       pannedNode.position * scaleFactor,
-//       pannedNode.rotation as Quaternion,
-//       Vector3(scaleFactor, scaleFactor, scaleFactor),
-//     )..setTranslation(Vector3(
-//         pannedNode.position.x,
-//         pannedNode.position.y + floatOffset,
-//         pannedNode.position.z));
-//
-//     arObjectManager!.moveNode(nodeName, newTransform);
-//   }
-//
-//   onPanStarted(String nodeName) {
-//     print("Started panning node $nodeName");
-//   }
-//
-//   onPanChanged(String nodeName, Matrix4 newTransform) {
-//     print("Panning node $nodeName");
-//
-//     final pannedNode = nodes.firstWhere((element) => element.name == nodeName);
-//     Vector3 translation = newTransform.getTranslation();
-//     pannedNode.position = translation;
-//
-//     arObjectManager!.moveNode(nodeName, newTransform);
-//   }
-//
-//   onPanEnded(String nodeName, Matrix4 newTransform) {
-//     print("Ended panning node $nodeName");
-//   }
-//
-//   onRotationStarted(String nodeName) {
-//     print("Started rotating node $nodeName");
-//   }
-//
-//   onRotationChanged(String nodeName) {
-//     print("Continued rotating node $nodeName");
-//   }
-//
-//   onRotationEnded(String nodeName, Matrix4 newTransform) {
-//     print("Ended rotating node $nodeName");
-//     final rotatedNode = nodes.firstWhere((element) => element.name == nodeName);
-//   }
-// }
-
+import 'dart:async';
 import 'package:ar_flutter_plugin/ar_flutter_plugin.dart';
 import 'package:ar_flutter_plugin/datatypes/config_planedetection.dart';
 import 'package:ar_flutter_plugin/datatypes/node_types.dart';
@@ -219,14 +6,18 @@ import 'package:ar_flutter_plugin/managers/ar_anchor_manager.dart';
 import 'package:ar_flutter_plugin/managers/ar_location_manager.dart';
 import 'package:ar_flutter_plugin/managers/ar_object_manager.dart';
 import 'package:ar_flutter_plugin/managers/ar_session_manager.dart';
+import 'package:ar_flutter_plugin/models/ar_hittest_result.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:ar_flutter_plugin/models/ar_node.dart';
 import 'package:flutter/material.dart';
 import 'package:vector_math/vector_math_64.dart';
+import '../../colors.dart';
 
 class ARModelViewer extends StatefulWidget {
-  final String modelUrl; // URL to the .glTF model in Firebase Storage
+  final Map<dynamic, dynamic>? furnitureData;
+  final String? selectedVariant;
 
-  ARModelViewer({required this.modelUrl, Key? key}) : super(key: key);
+  ARModelViewer({required this.furnitureData, required this.selectedVariant, Key? key}) : super(key: key);
 
   @override
   _ARModelViewerState createState() => _ARModelViewerState();
@@ -235,90 +26,302 @@ class ARModelViewer extends StatefulWidget {
 class _ARModelViewerState extends State<ARModelViewer> {
   ARSessionManager? arSessionManager;
   ARObjectManager? arObjectManager;
+  List<String> nodeImages = [];
   List<ARNode> nodes = [];
   ARNode? selectedNode;
+  final Map<int, bool> _isPressedMap = {};
+  bool isLoadingModel = true;
 
   @override
   Widget build(BuildContext context) {
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text('AR Model Viewer'),
-      ),
       body: Stack(
         children: [
           ARView(
             onARViewCreated: onARViewCreated,
             planeDetectionConfig: PlaneDetectionConfig.horizontalAndVertical,
           ),
-          Align(
-            alignment: FractionalOffset.bottomCenter,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: onRemoveEverything,
-                  child: Text("Remove Everything"),
-                ),
-              ],
-            ),
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+          Positioned(
+            top: 0,
+            left: 0,
+            child: Container(
+              margin: const EdgeInsets.only(left: 16.0, top: 30.0),
+              width: MediaQuery.of(context).size.width,
+              child: Row(
                 children: [
-                  // Upward
-                  _buildControlButton(Icons.arrow_upward, () => moveNode(Vector3(0.0, 0.1, 0.0))),
-                  SizedBox(height: 16),
-
-                  // Downward
-                  _buildControlButton(Icons.arrow_downward, () => moveNode(Vector3(0.0, -0.1, 0.0))),
-                  SizedBox(height: 16),
-
-                  // Left
-                  _buildControlButton(Icons.arrow_back, () => moveNode(Vector3(-0.1, 0.0, 0.0))),
-                  SizedBox(height: 16),
-
-                  // Right
-                  _buildControlButton(Icons.arrow_forward, () => moveNode(Vector3(0.1, 0.0, 0.0))),
-                  SizedBox(height: 16),
-
-                  // Forward (moving into the screen, Z-axis negative)
-                  _buildControlButton(Icons.arrow_circle_up, () => moveNode(Vector3(0.0, 0.0, -0.1))),
-                  SizedBox(height: 16),
-
-                  // Backward (moving out of the screen, Z-axis positive)
-                  _buildControlButton(Icons.arrow_circle_down, () => moveNode(Vector3(0.0, 0.0, 0.1))),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.cyanAccent),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                  const SizedBox(width: 16),
+                  _buildImageList(),
                 ],
               ),
             ),
+          ),
+          Align(
+            alignment: isLandscape ? FractionalOffset.topRight : FractionalOffset.bottomCenter,
+            child: Padding(
+              padding: isLandscape ? const EdgeInsets.only(top: 25.0, right: 16.0)
+                  : const EdgeInsets.only(bottom: 16.0),
+              child: SpeedDial(
+                icon: Icons.add,
+                direction: isLandscape ? SpeedDialDirection.down : SpeedDialDirection.up,
+                backgroundColor: Colors.cyanAccent,
+                childPadding: const EdgeInsets.all(5),
+                spaceBetweenChildren: 6,
+                overlayColor: Colors.black.withOpacity(0.5),
+                overlayOpacity: 0.5,
+                children: [
+                  SpeedDialChild(
+                    child: const Icon(Icons.playlist_remove_outlined, color: Colors.white, size: 30),
+                    backgroundColor: Colors.redAccent,
+                    label: 'Remove Everything',
+                    onTap: onRemoveEverything,
+                  ),
+                  SpeedDialChild(
+                    child: const Icon(Icons.remove, color: Colors.white, size: 30),
+                    backgroundColor: Colors.redAccent,
+                    label: 'Remove Selected Model',
+                    onTap: () => onRemoveNode(selectedNode!),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          OrientationBuilder(
+            builder: (context, orientation) {
+              if (orientation == Orientation.portrait) {
+                return Align(
+                  alignment: Alignment.centerRight,
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          // Upward
+                          _buildControlButton(0, Icons.keyboard_double_arrow_up, () => moveNode(Vector3(0.0, 0.02, 0.0))),
+                          const SizedBox(height: 12),
+                          // Downward
+                          _buildControlButton(1, Icons.keyboard_double_arrow_down, () => moveNode(Vector3(0.0, -0.02, 0.0))),
+                          const SizedBox(height: 12),
+                          // Left
+                          _buildControlButton(2, Icons.arrow_back, () => moveNode(Vector3(-0.02, 0.0, 0.0))),
+                          const SizedBox(height: 12),
+                          // Right
+                          _buildControlButton(3, Icons.arrow_forward, () => moveNode(Vector3(0.02, 0.0, 0.0))),
+                          const SizedBox(height: 12),
+                          // Forward (moving into the screen, Z-axis negative)
+                          _buildControlButton(4, Icons.arrow_upward, () => moveNode(Vector3(0.0, 0.0, -0.02))),
+                          const SizedBox(height: 12),
+                          // Backward (moving out of the screen, Z-axis positive)
+                          _buildControlButton(5, Icons.arrow_downward, () => moveNode(Vector3(0.0, 0.0, 0.02))),
+                          const SizedBox(height: 12),
+                          // Rotation Controls
+                          // Rotate left around Y-axis
+                          _buildRotationButton(6, Icons.rotate_left_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(0.0, 1.0, 0.0), -0.1))),
+                          const SizedBox(height: 12),
+                          // Rotate right around Y-axis
+                          _buildRotationButton(7, Icons.rotate_right_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(0.0, 1.0, 0.0), 0.1))),
+                          const SizedBox(height: 12),
+                          // Rotate up around X-axis
+                          _buildRotationButton(8, Icons.rotate_left_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(1.0, 0.0, 0.0), 0.1)), rotationAngle: 90),
+                          const SizedBox(height: 12),
+                          // Rotate down around X-axis
+                          _buildRotationButton(9, Icons.rotate_right_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(1.0, 0.0, 0.0), -0.1)), rotationAngle: 90),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              } else {
+                return Align(
+                  alignment: Alignment.bottomCenter,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          // Upward
+                          _buildControlButton(0, Icons.keyboard_double_arrow_up, () => moveNode(Vector3(0.0, 0.02, 0.0))),
+                          const SizedBox(width: 12),
+                          // Downward
+                          _buildControlButton(1, Icons.keyboard_double_arrow_down, () => moveNode(Vector3(0.0, -0.02, 0.0))),
+                          const SizedBox(width: 12),
+                          // Left
+                          _buildControlButton(2, Icons.arrow_back, () => moveNode(Vector3(-0.02, 0.0, 0.0))),
+                          const SizedBox(width: 12),
+                          // Right
+                          _buildControlButton(3, Icons.arrow_forward, () => moveNode(Vector3(0.02, 0.0, 0.0))),
+                          const SizedBox(width: 12),
+                          // Forward (moving into the screen, Z-axis negative)
+                          _buildControlButton(4, Icons.arrow_upward, () => moveNode(Vector3(0.0, 0.0, -0.02))),
+                          const SizedBox(width: 12),
+                          // Backward (moving out of the screen, Z-axis positive)
+                          _buildControlButton(5, Icons.arrow_downward, () => moveNode(Vector3(0.0, 0.0, 0.02))),
+                          const SizedBox(width: 12),
+                          // Rotation Controls
+                          // Rotate left around Y-axis
+                          _buildRotationButton(6, Icons.rotate_left_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(0.0, 1.0, 0.0), -0.1))),
+                          const SizedBox(width: 12),
+                          // Rotate right around Y-axis
+                          _buildRotationButton(7, Icons.rotate_right_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(0.0, 1.0, 0.0), 0.1))),
+                          const SizedBox(width: 12),
+                          // Rotate up around X-axis
+                          _buildRotationButton(8, Icons.rotate_left_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(1.0, 0.0, 0.0), 0.1)), rotationAngle: 90),
+                          const SizedBox(width: 12),
+                          // Rotate down around X-axis
+                          _buildRotationButton(9, Icons.rotate_right_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(1.0, 0.0, 0.0), -0.1)), rotationAngle: 90),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildControlButton(IconData icon, VoidCallback onPressed) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 4,
-            spreadRadius: 2,
-          ),
-        ],
+  Widget _buildImageList() {
+    print("Node Images: $nodeImages");
+    return SizedBox(
+      height: 60,
+      width: MediaQuery.of(context).size.width - 100,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: nodeImages.length,
+        itemBuilder: (context, index) {
+          final imageUrl = nodeImages[index];
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: GestureDetector(
+              onTap: () {
+                // Handle the tap event here
+                print("Image tapped: $imageUrl");
+              },
+              child: Container(
+                width: 60,
+                height: 60,
+                padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(
+                    color: AppColors.secondary,
+                    width: 2.0,
+                  ),
+                ),
+                child: Image.network(
+                  imageUrl,
+                  width: 60,
+                  height: 60,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          );
+        },
       ),
-      child: IconButton(
-        icon: Icon(icon, color: Colors.black),
-        onPressed: onPressed,
-        iconSize: 32,
-        padding: EdgeInsets.all(16),
+    );
+  }
+
+  Timer? timer;
+  Widget _buildControlButton(int key, IconData icon, VoidCallback onPressed) {
+    return GestureDetector(
+      onTap: onPressed,
+      onTapDown: (_) => setState(() => _isPressedMap[key] = true),
+      onTapUp: (_) => setState(() => _isPressedMap[key] = false),
+      onTapCancel: () => setState(() => _isPressedMap[key] = false),
+      onLongPress: () {
+        setState(() => _isPressedMap[key] = true);
+        timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+          onPressed();
+        });
+      },
+      onLongPressEnd: (_) {
+        setState(() => _isPressedMap[key] = false);
+        timer?.cancel();
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: _isPressedMap[key] == true ? AppColors.secondary : Colors.cyanAccent,
+            width: 2.0,
+          ),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: _isPressedMap[key] == true ? AppColors.secondary : Colors.transparent,
+              width: 2.0,
+            ),
+          ),
+          child: IconButton(
+            icon: Icon(icon, color: _isPressedMap[key] == true ? AppColors.secondary : Colors.cyanAccent),
+            onPressed: onPressed,
+            iconSize: 20,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRotationButton(int key, IconData icon, VoidCallback onPressed, {double rotationAngle = 0.0}) {
+    return GestureDetector(
+      onTap: onPressed,
+      onTapDown: (_) => setState(() => _isPressedMap[key] = true),
+      onTapUp: (_) => setState(() => _isPressedMap[key] = false),
+      onTapCancel: () => setState(() => _isPressedMap[key] = false),
+      onLongPress: () {
+        setState(() => _isPressedMap[key] = true);
+        timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+          onPressed();
+        });
+      },
+      onLongPressEnd: (_) {
+        setState(() => _isPressedMap[key] = false);
+        timer?.cancel();
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: _isPressedMap[key] == true ? AppColors.secondary : Colors.cyanAccent,
+            width: 2.0,
+          ),
+        ),
+        child: Transform.rotate(
+          angle: rotationAngle,
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: _isPressedMap[key] == true ? AppColors.secondary : Colors.transparent,
+                width: 2.0,
+              ),
+            ),
+            child: IconButton(
+              icon: Icon(icon, color: _isPressedMap[key] == true ? AppColors.secondary : Colors.cyanAccent),
+              onPressed: onPressed,
+              iconSize: 20,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -335,57 +338,110 @@ class _ARModelViewerState extends State<ARModelViewer> {
     this.arSessionManager!.onInitialize(
       showFeaturePoints: false,
       showPlanes: true,
-      customPlaneTexturePath: "Images/triangle.png",
-      showWorldOrigin: true,
+      showWorldOrigin: false,
+      handleTaps: true,
+      handlePans: true,
       handleRotation: true,
     );
+
     this.arObjectManager!.onInitialize();
+
+    this.arSessionManager!.onPlaneOrPointTap = onPlaneOrPointTapped;
 
     this.arObjectManager!.onRotationStart = onRotationStarted;
     this.arObjectManager!.onRotationChange = onRotationChanged;
     this.arObjectManager!.onRotationEnd = onRotationEnded;
-
-    _addModelToScene();
   }
 
-  Future<void> _addModelToScene() async {
+  void onPlaneOrPointTapped(List<ARHitTestResult> hitTestResults) async {
+    // Check if there are any hit test results
+    if (hitTestResults.isNotEmpty) {
+      // Get the first hit test result (the nearest hit)
+      ARHitTestResult hitResult = hitTestResults.first;
+
+      // Extract the position and rotation from the hit test result
+      Vector3 position = hitResult.worldTransform.getTranslation();
+      Quaternion rotation = Quaternion.fromRotation(hitResult.worldTransform.getRotation());
+
+      print('Tapped on a plane or point at position: $position');
+      print('Rotation at the tapped point: $rotation');
+
+      // Call a function to add a model at the tapped position
+      await _addModelToSceneAtPosition(position, rotation, widget.furnitureData?['variants']);
+    }
+  }
+
+  Vector4 quaternionToVector4(Quaternion q) {
+    return Vector4(q.x, q.y, q.z, q.w);
+  }
+
+  Future<void> _addModelToSceneAtPosition(position, rotation, variant) async {
+    setState(() {
+      isLoadingModel = true;
+    });
+
+    Vector4 rotationVector = quaternionToVector4(rotation);
+
     try {
       final newNode = ARNode(
-        type: NodeType.webGLB, // Adjust as needed
-        uri: widget.modelUrl,
-        scale: Vector3(0.2, 0.2, 0.2),
-        position: Vector3(0.0, 0.0, 0.0),
-        rotation: Vector4(1.0, 0.0, 0.0, 0.0),
+        type: NodeType.webGLB,
+        name: variant[widget.selectedVariant]['color'],
+        uri: variant[widget.selectedVariant]['model'],
+        scale: Vector3.all(1),
+        position: position,
+        rotation: rotationVector,
       );
 
       bool? didAddNode = await arObjectManager!.addNode(newNode);
       if (didAddNode != null && didAddNode) {
-        nodes.add(newNode);
-        selectedNode = newNode; // Set the newly added node as selected
+        setState(() {
+          nodes.add(newNode);
+          selectedNode = newNode;
+          isLoadingModel = false;
+          print('Model added to detected plane successfully');
+        });
+      } else {
+        print('Failed to add model to the plane');
+        setState(() {
+          isLoadingModel = false;
+        });
       }
     } catch (e) {
-      print("Error adding model to scene: $e");
+      print("Error adding model to detected plane: $e");
+      setState(() {
+        isLoadingModel = false;
+      });
     }
   }
 
-  onRotationStarted(String nodeName) {
+  void onRotationStarted(String nodeName) {
     print("Started rotating node $nodeName");
   }
 
-  onRotationChanged(String nodeName) {
+  void onRotationChanged(String nodeName) {
     print("Continued rotating node $nodeName");
   }
 
-  onRotationEnded(String nodeName, Matrix4 newTransform) {
+  void onRotationEnded(String nodeName, Matrix4 newTransform) {
     print("Ended rotating node $nodeName");
-    final rotatedNode = nodes.firstWhere((element) => element.name == nodeName);
+
+    // Extract the rotation from the Matrix4 transform
+    Quaternion rotation = Quaternion.fromRotation(newTransform.getRotation());
+
+    // Pass the Quaternion to rotateNode
+    rotateNode(rotation);
   }
 
   Future<void> onRemoveEverything() async {
-    nodes.forEach((node) {
-      arObjectManager!.removeNode(node);
-    });
+    for (var node in nodes) {
+      await arObjectManager!.removeNode(node);
+    }
     nodes = [];
+  }
+
+  Future<void> onRemoveNode(ARNode node) async {
+    await arObjectManager!.removeNode(node);
+    nodes.remove(node);
   }
 
   void moveNode(Vector3 offset) {
@@ -394,9 +450,16 @@ class _ARModelViewerState extends State<ARModelViewer> {
       final newPosition = currentPosition + offset;
       selectedNode!.position = newPosition;
 
+      Quaternion rotation;
+      if (selectedNode!.rotation is Quaternion) {
+        rotation = selectedNode!.rotation as Quaternion;
+      } else {
+        rotation = Quaternion.fromRotation(selectedNode!.rotation);
+      }
+
       final transform = Matrix4.compose(
         newPosition,
-        selectedNode!.rotation as Quaternion,
+        rotation,
         selectedNode!.scale,
       );
 
@@ -404,4 +467,23 @@ class _ARModelViewerState extends State<ARModelViewer> {
     }
   }
 
+  void rotateNode(Quaternion deltaRotation) {
+    if (selectedNode != null) {
+      Vector3 currentPosition = selectedNode!.position;
+      Quaternion currentRotation = Quaternion.fromRotation(selectedNode!.rotation);
+      Vector3 currentScale = selectedNode!.scale;
+      print("Current scale: $currentScale");
+      // Normalize delta rotation
+      Quaternion normalizedDeltaRotation = deltaRotation.normalized();
+
+      // Apply the new rotation
+      Quaternion newRotation = normalizedDeltaRotation * currentRotation;
+
+      // Manually enforce the scale
+      selectedNode!.transform = Matrix4.compose(currentPosition, newRotation, Vector3.all(1));
+
+      // Move the node with the updated transform
+      arObjectManager!.moveNode(selectedNode!.name, selectedNode!.transform);
+    }
+  }
 }

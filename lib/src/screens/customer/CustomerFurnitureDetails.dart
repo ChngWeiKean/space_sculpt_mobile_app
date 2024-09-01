@@ -556,7 +556,7 @@ class _CustomerFurnitureDetailsState extends State<CustomerFurnitureDetails> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ARModelViewer(modelUrl: _currentModelUrl),
+                            builder: (context) => ARModelViewer(furnitureData: _furnitureData, selectedVariant: _selectedVariant),
                           ),
                         );
                       },
