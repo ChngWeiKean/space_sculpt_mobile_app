@@ -90,6 +90,7 @@ class _LoginState extends State<Login> {
                   alignment: Alignment.center,
                   child: Text(
                     'Welcome To Space Sculpt',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Poppins_Bold',
                       color: AppColors.primary,
