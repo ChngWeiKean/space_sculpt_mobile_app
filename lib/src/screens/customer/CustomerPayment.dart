@@ -31,6 +31,7 @@ class _CustomerPaymentState extends State<CustomerPayment> {
   final TextEditingController _cvvController = TextEditingController();
   final TextEditingController _billingAddressController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _remarksController = TextEditingController();
 
   @override
   void initState() {
@@ -228,6 +229,7 @@ class _CustomerPaymentState extends State<CustomerPayment> {
       'total': widget.checkoutData['total'],
       'shipping_date': _dateController.text,
       'shipping_time': _selectedTime,
+      'remarks': _remarksController.text,
     };
 
     for (var item in data['items']) {
@@ -406,8 +408,10 @@ class _CustomerPaymentState extends State<CustomerPayment> {
                       onTap: () async {
                         DateTime? pickedDate = await showDatePicker(
                           context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime.now(),
+                          initialDate: DateTime.now().add(Duration(days: int.parse(_settings!['settings']
+                              .firstWhere((s) => s['key'] == 'delivery_offset', orElse: () => {'value': '0'})['value'] as String))),
+                          firstDate: DateTime.now().add(Duration(days: int.parse(_settings!['settings']
+                              .firstWhere((s) => s['key'] == 'delivery_offset', orElse: () => {'value': '0'})['value'] as String))),
                           lastDate: DateTime(2101),
                         );
                         if (pickedDate != null) {
@@ -794,6 +798,25 @@ class _CustomerPaymentState extends State<CustomerPayment> {
                                 ),
                               ),
                             )
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Remarks',
+                              style: TextStyle(fontSize: 16, fontFamily: 'Poppins_SemiBold'),
+                            ),
+                            const SizedBox(height: 5),
+                            TextFormField(
+                              controller: _remarksController,
+                              decoration: const InputDecoration(
+                                hintText: 'Add any additional notes here',
+                                border: OutlineInputBorder(),
+                              ),
+                              maxLines: 3,
+                            ),
                           ],
                         ),
                         const SizedBox(height: 20),
