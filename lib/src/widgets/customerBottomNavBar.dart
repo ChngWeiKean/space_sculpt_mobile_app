@@ -48,35 +48,35 @@ class _CustomerBottomNavBarState extends State<CustomerBottomNavBar> {
     return [
       BottomNavigationBarItem(
         icon: Icon(
-          Icons.home,
+          Icons.home_outlined,
           color: _selectedIndex == 0 ? AppColors.secondary : Colors.black54,
         ),
         label: 'Home',
       ),
       BottomNavigationBarItem(
         icon: Icon(
-          Icons.shopping_cart,
+          Icons.shopping_cart_outlined,
           color: _selectedIndex == 1 ? AppColors.secondary : Colors.black54,
         ),
         label: 'Cart',
       ),
       BottomNavigationBarItem(
         icon: Icon(
-          Icons.receipt_long,
+          Icons.receipt_long_outlined,
           color: _selectedIndex == 2 ? AppColors.secondary : Colors.black54,
         ),
         label: 'Orders',
       ),
       BottomNavigationBarItem(
         icon: Icon(
-          Icons.person,
+          Icons.person_outline,
           color: _selectedIndex == 3 ? AppColors.secondary : Colors.black54,
         ),
         label: 'Profile',
       ),
       BottomNavigationBarItem(
         icon: Icon(
-          Icons.settings,
+          Icons.settings_outlined,
           color: _selectedIndex == 4 ? AppColors.secondary : Colors.black54,
         ),
         label: 'Settings',

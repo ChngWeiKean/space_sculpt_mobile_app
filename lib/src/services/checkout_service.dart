@@ -17,6 +17,7 @@ class CheckoutService {
     final String total = data['total'];
     final String shippingDate = data['shipping_date'];
     final String shippingTime = data['shipping_time'];
+    final String remarks = data['remarks'];
 
     try {
       // Fetch existing order IDs and determine the max order ID
@@ -57,6 +58,7 @@ class CheckoutService {
         'total': total,
         'shipping_date': shippingDate,
         'shipping_time': shippingTime,
+        'remarks': remarks,
         'completion_status': {
           'Pending': DateTime.now().toIso8601String(),
           'ReadyForShipping': null,
