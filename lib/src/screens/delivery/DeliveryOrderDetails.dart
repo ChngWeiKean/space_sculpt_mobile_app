@@ -20,6 +20,7 @@ class DeliveryOrderDetails extends StatefulWidget {
 }
 
 class _DeliveryOrderDetailsState extends State<DeliveryOrderDetails> {
+  final TextEditingController _remarksController = TextEditingController();
   late DatabaseReference _dbRef;
   late User _currentUser;
   Map<dynamic, dynamic>? _orderData;
@@ -53,6 +54,7 @@ class _DeliveryOrderDetailsState extends State<DeliveryOrderDetails> {
     final snapshot = await _dbRef.child('orders/${widget.orderId}').get();
     if (snapshot.exists) {
       _orderData = snapshot.value as Map<dynamic, dynamic>;
+      _remarksController.text = _orderData!['remarks'] ?? '';
       if (_orderData!['proof_of_delivery'] != null) {
         _uploadedImages = List<String>.from(_orderData!['proof_of_delivery']);
       }
@@ -645,6 +647,25 @@ class _DeliveryOrderDetailsState extends State<DeliveryOrderDetails> {
                   ],
                 ),
               ),
+            ),
+            const SizedBox(height: 20),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Remarks',
+                  style: TextStyle(fontSize: 16, fontFamily: 'Poppins_SemiBold'),
+                ),
+                const SizedBox(height: 5),
+                TextFormField(
+                  controller: _remarksController,
+                  decoration: const InputDecoration(
+                    hintText: 'Add any additional notes here',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                ),
+              ],
             ),
             const SizedBox(height: 10),
             Padding(
