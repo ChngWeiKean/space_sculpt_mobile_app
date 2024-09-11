@@ -649,23 +649,27 @@ class _DeliveryOrderDetailsState extends State<DeliveryOrderDetails> {
               ),
             ),
             const SizedBox(height: 20),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Remarks',
-                  style: TextStyle(fontSize: 16, fontFamily: 'Poppins_SemiBold'),
-                ),
-                const SizedBox(height: 5),
-                TextFormField(
-                  controller: _remarksController,
-                  decoration: const InputDecoration(
-                    hintText: 'Add any additional notes here',
-                    border: OutlineInputBorder(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Remarks',
+                    style: TextStyle(fontSize: 16, fontFamily: 'Poppins_SemiBold'),
                   ),
-                  maxLines: 3,
-                ),
-              ],
+                  const SizedBox(height: 5),
+                  TextFormField(
+                    controller: _remarksController,
+                    readOnly: true,
+                    decoration: const InputDecoration(
+                      hintText: 'Add any additional notes here',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 10),
             Padding(
