@@ -185,7 +185,6 @@ class _ARModelViewerState extends State<ARModelViewer> {
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           // Upward
                           _buildControlButton(0, Icons.keyboard_double_arrow_up, () => moveNode(Vector3(0.0, 0.02, 0.0)), 'Up'),
