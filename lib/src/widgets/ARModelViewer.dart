@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:ar_flutter_plugin/ar_flutter_plugin.dart';
 import 'package:ar_flutter_plugin/datatypes/config_planedetection.dart';
 import 'package:ar_flutter_plugin/datatypes/node_types.dart';
@@ -11,7 +13,9 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:ar_flutter_plugin/models/ar_node.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:vector_math/vector_math_64.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
 import '../../colors.dart';
 
 class ARModelViewer extends StatefulWidget {
@@ -108,168 +112,236 @@ class _ARModelViewerState extends State<ARModelViewer> {
     }
   }
 
+  bool _isSavingScreenshot = false;
+
+  Future<void> saveScreenshot(BuildContext context) async {
+    setState(() {
+      _isSavingScreenshot = true; // Start loading
+    });
+
+    final Uint8List? screenshot = (await arSessionManager!.snapshot()) as Uint8List?;
+
+    if (screenshot != null) {
+      // Get the temporary directory
+      final directory = await getTemporaryDirectory();
+      final String filePath = '${directory.path}/screenshot.png';
+
+      // Save the screenshot to the file
+      final File imageFile = File(filePath);
+      await imageFile.writeAsBytes(screenshot); // No casting needed
+
+      // Save to gallery
+      final result = await ImageGallerySaver.saveFile(filePath);
+      if (!context.mounted) return;
+
+      if (result != null && result['isSuccess']) {
+        print('Image saved to gallery successfully!');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Screenshot saved to gallery!')),
+        );
+      } else {
+        print('Failed to save image to gallery.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to save screenshot.')),
+        );
+      }
+    }
+
+    setState(() {
+      _isSavingScreenshot = false; // Stop loading
+    });
+  }
+
+  Widget _buildControlButtons(String direction) {
+    return direction == "column"
+        ? Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Upward
+        _buildControlButton(0, Icons.keyboard_double_arrow_up, () => moveNode(Vector3(0.0, 0.02, 0.0)), 'Up'),
+        const SizedBox(height: 12),
+        // Downward
+        _buildControlButton(1, Icons.keyboard_double_arrow_down, () => moveNode(Vector3(0.0, -0.02, 0.0)), 'Down'),
+        const SizedBox(height: 12),
+        // Left
+        _buildControlButton(2, Icons.arrow_back, () => moveNode(Vector3(-0.02, 0.0, 0.0)), 'Left'),
+        const SizedBox(height: 12),
+        // Right
+        _buildControlButton(3, Icons.arrow_forward, () => moveNode(Vector3(0.02, 0.0, 0.0)), 'Right'),
+        const SizedBox(height: 12),
+        // Forward (moving into the screen, Z-axis negative)
+        _buildControlButton(4, Icons.arrow_upward, () => moveNode(Vector3(0.0, 0.0, -0.02)), 'Forward'),
+        const SizedBox(height: 12),
+        // Backward (moving out of the screen, Z-axis positive)
+        _buildControlButton(5, Icons.arrow_downward, () => moveNode(Vector3(0.0, 0.0, 0.02)), 'Backward'),
+        const SizedBox(height: 12),
+        // Rotation Controls
+        // Rotate left around Y-axis
+        _buildRotationButton(6, Icons.rotate_left_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(0.0, 1.0, 0.0), -0.1)), 'Rotate Left'),
+        const SizedBox(height: 12),
+        // Rotate right around Y-axis
+        _buildRotationButton(7, Icons.rotate_right_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(0.0, 1.0, 0.0), 0.1)), 'Rotate Right'),
+        const SizedBox(height: 12),
+        // Rotate up around X-axis
+        _buildRotationButton(8, Icons.rotate_left_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(1.0, 0.0, 0.0), 0.1)), 'Rotate Up', rotationAngle: 90),
+        const SizedBox(height: 12),
+        // Rotate down around X-axis
+        _buildRotationButton(9, Icons.rotate_right_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(1.0, 0.0, 0.0), -0.1)), 'Rotate Down', rotationAngle: 90),
+      ],
+    )
+        : Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Upward
+        _buildControlButton(0, Icons.keyboard_double_arrow_up, () => moveNode(Vector3(0.0, 0.02, 0.0)), 'Up'),
+        const SizedBox(width: 12),
+        // Downward
+        _buildControlButton(1, Icons.keyboard_double_arrow_down, () => moveNode(Vector3(0.0, -0.02, 0.0)), 'Down'),
+        const SizedBox(width: 12),
+        // Left
+        _buildControlButton(2, Icons.arrow_back, () => moveNode(Vector3(-0.02, 0.0, 0.0)), 'Left'),
+        const SizedBox(width: 12),
+        // Right
+        _buildControlButton(3, Icons.arrow_forward, () => moveNode(Vector3(0.02, 0.0, 0.0)), 'Right'),
+        const SizedBox(width: 12),
+        // Forward (moving into the screen, Z-axis negative)
+        _buildControlButton(4, Icons.arrow_upward, () => moveNode(Vector3(0.0, 0.0, -0.02)), 'Forward'),
+        const SizedBox(width: 12),
+        // Backward (moving out of the screen, Z-axis positive)
+        _buildControlButton(5, Icons.arrow_downward, () => moveNode(Vector3(0.0, 0.0, 0.02)), 'Backward'),
+        const SizedBox(width: 12),
+        // Rotation Controls
+        // Rotate left around Y-axis
+        _buildRotationButton(6, Icons.rotate_left_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(0.0, 1.0, 0.0), -0.1)), 'Rotate Left'),
+        const SizedBox(width: 12),
+        // Rotate right around Y-axis
+        _buildRotationButton(7, Icons.rotate_right_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(0.0, 1.0, 0.0), 0.1)), 'Rotate Right'),
+        const SizedBox(width: 12),
+        // Rotate up around X-axis
+        _buildRotationButton(8, Icons.rotate_left_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(1.0, 0.0, 0.0), 0.1)), 'Rotate Up', rotationAngle: 90),
+        const SizedBox(width: 12),
+        // Rotate down around X-axis
+        _buildRotationButton(9, Icons.rotate_right_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(1.0, 0.0, 0.0), -0.1)), 'Rotate Down', rotationAngle: 90),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
-
     return Scaffold(
-      body: Stack(
-        children: [
-          ARView(
-            onARViewCreated: onARViewCreated,
-            planeDetectionConfig: PlaneDetectionConfig.horizontalAndVertical,
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            child: Container(
-              margin: const EdgeInsets.only(left: 16.0, top: 30.0),
-              width: MediaQuery.of(context).size.width,
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.cyanAccent),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                  const SizedBox(width: 16),
-                  _buildImageList(),
-                ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
+          return Stack(
+            children: [
+              ARView(
+                onARViewCreated: onARViewCreated,
+                planeDetectionConfig: PlaneDetectionConfig.horizontalAndVertical,
               ),
-            ),
-          ),
-          Align(
-            alignment: isLandscape ? FractionalOffset.topRight : FractionalOffset.bottomCenter,
-            child: Padding(
-              padding: isLandscape ? const EdgeInsets.only(top: 25.0, right: 16.0)
-                  : const EdgeInsets.only(bottom: 16.0),
-              child: SpeedDial(
-                icon: Icons.add,
-                direction: isLandscape ? SpeedDialDirection.down : SpeedDialDirection.up,
-                backgroundColor: Colors.cyanAccent,
-                childPadding: const EdgeInsets.all(10),
-                spaceBetweenChildren: 6,
-                overlayColor: Colors.black.withOpacity(0.5),
-                overlayOpacity: 0.5,
-                children: [
-                  SpeedDialChild(
-                    child: const Icon(Icons.playlist_remove_outlined, color: Colors.white, size: 20),
-                    backgroundColor: Colors.redAccent,
-                    label: 'Remove Everything',
-                    onTap: onRemoveEverything,
+              Positioned(
+                top: 0,
+                left: 0,
+                child: Container(
+                  margin: const EdgeInsets.only(left: 16.0, top: 30.0),
+                  width: MediaQuery.of(context).size.width,
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.cyanAccent),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                      const SizedBox(width: 16),
+                      _buildImageList(),
+                    ],
                   ),
-                  SpeedDialChild(
-                    child: const Icon(Icons.remove, color: Colors.white, size: 20),
-                    backgroundColor: Colors.redAccent,
-                    label: 'Remove Selected',
-                    onTap: () => onRemoveNode(selectedNode!),
-                  ),
-                  SpeedDialChild(
-                    child: const Icon(Icons.add, color: Colors.white, size: 20),
-                    backgroundColor: Colors.cyanAccent,
-                    label: 'Add Model',
-                    onTap: _openCatalogSelectionModal,
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-          OrientationBuilder(
-            builder: (context, orientation) {
-              if (orientation == Orientation.portrait) {
-                return Align(
-                  alignment: Alignment.centerRight,
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Upward
-                          _buildControlButton(0, Icons.keyboard_double_arrow_up, () => moveNode(Vector3(0.0, 0.02, 0.0)), 'Up'),
-                          const SizedBox(height: 12),
-                          // Downward
-                          _buildControlButton(1, Icons.keyboard_double_arrow_down, () => moveNode(Vector3(0.0, -0.02, 0.0)), 'Down'),
-                          const SizedBox(height: 12),
-                          // Left
-                          _buildControlButton(2, Icons.arrow_back, () => moveNode(Vector3(-0.02, 0.0, 0.0)), 'Left'),
-                          const SizedBox(height: 12),
-                          // Right
-                          _buildControlButton(3, Icons.arrow_forward, () => moveNode(Vector3(0.02, 0.0, 0.0)), 'Right'),
-                          const SizedBox(height: 12),
-                          // Forward (moving into the screen, Z-axis negative)
-                          _buildControlButton(4, Icons.arrow_upward, () => moveNode(Vector3(0.0, 0.0, -0.02)), 'Forward'),
-                          const SizedBox(height: 12),
-                          // Backward (moving out of the screen, Z-axis positive)
-                          _buildControlButton(5, Icons.arrow_downward, () => moveNode(Vector3(0.0, 0.0, 0.02)), 'Backward'),
-                          const SizedBox(height: 12),
-                          // Rotation Controls
-                          // Rotate left around Y-axis
-                          _buildRotationButton(6, Icons.rotate_left_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(0.0, 1.0, 0.0), -0.1)), 'Rotate Left'),
-                          const SizedBox(height: 12),
-                          // Rotate right around Y-axis
-                          _buildRotationButton(7, Icons.rotate_right_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(0.0, 1.0, 0.0), 0.1)), 'Rotate Right'),
-                          const SizedBox(height: 12),
-                          // Rotate up around X-axis
-                          _buildRotationButton(8, Icons.rotate_left_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(1.0, 0.0, 0.0), 0.1)), 'Rotate Up', rotationAngle: 90),
-                          const SizedBox(height: 12),
-                          // Rotate down around X-axis
-                          _buildRotationButton(9, Icons.rotate_right_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(1.0, 0.0, 0.0), -0.1)), 'Rotate Down', rotationAngle: 90),
-                        ],
-                      ),
+              Positioned(
+                bottom: isLandscape ? null : 16.0,
+                top: isLandscape ? 16.0 : null,
+                right: isLandscape ? 16.0 : 0,
+                left: isLandscape ? null : 0,
+                child: SpeedDial(
+                  icon: Icons.add,
+                  direction: isLandscape ? SpeedDialDirection.down : SpeedDialDirection.up,
+                  backgroundColor: Colors.cyanAccent,
+                  childPadding: const EdgeInsets.all(10),
+                  spaceBetweenChildren: 6,
+                  overlayColor: Colors.black.withOpacity(0.5),
+                  overlayOpacity: 0.5,
+                  children: [
+                    SpeedDialChild(
+                      child: const Icon(Icons.playlist_remove_outlined, color: Colors.white, size: 20),
+                      backgroundColor: Colors.redAccent,
+                      label: 'Remove Everything',
+                      onTap: onRemoveEverything,
                     ),
-                  ),
-                );
-              } else {
-                return Align(
-                  alignment: Alignment.bottomCenter,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          // Upward
-                          _buildControlButton(0, Icons.keyboard_double_arrow_up, () => moveNode(Vector3(0.0, 0.02, 0.0)), 'Up'),
-                          const SizedBox(width: 12),
-                          // Downward
-                          _buildControlButton(1, Icons.keyboard_double_arrow_down, () => moveNode(Vector3(0.0, -0.02, 0.0)), 'Down'),
-                          const SizedBox(width: 12),
-                          // Left
-                          _buildControlButton(2, Icons.arrow_back, () => moveNode(Vector3(-0.02, 0.0, 0.0)), 'Left'),
-                          const SizedBox(width: 12),
-                          // Right
-                          _buildControlButton(3, Icons.arrow_forward, () => moveNode(Vector3(0.02, 0.0, 0.0)), 'Right'),
-                          const SizedBox(width: 12),
-                          // Forward (moving into the screen, Z-axis negative)
-                          _buildControlButton(4, Icons.arrow_upward, () => moveNode(Vector3(0.0, 0.0, -0.02)), 'Forward'),
-                          const SizedBox(width: 12),
-                          // Backward (moving out of the screen, Z-axis positive)
-                          _buildControlButton(5, Icons.arrow_downward, () => moveNode(Vector3(0.0, 0.0, 0.02)), 'Backward'),
-                          const SizedBox(width: 12),
-                          // Rotation Controls
-                          // Rotate left around Y-axis
-                          _buildRotationButton(6, Icons.rotate_left_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(0.0, 1.0, 0.0), -0.1)), 'Rotate Left'),
-                          const SizedBox(width: 12),
-                          // Rotate right around Y-axis
-                          _buildRotationButton(7, Icons.rotate_right_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(0.0, 1.0, 0.0), 0.1)), 'Rotate Right'),
-                          const SizedBox(width: 12),
-                          // Rotate up around X-axis
-                          _buildRotationButton(8, Icons.rotate_left_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(1.0, 0.0, 0.0), 0.1)), 'Rotate Up', rotationAngle: 90),
-                          const SizedBox(width: 12),
-                          // Rotate down around X-axis
-                          _buildRotationButton(9, Icons.rotate_right_outlined, () => rotateNode(Quaternion.axisAngle(Vector3(1.0, 0.0, 0.0), -0.1)), 'Rotate Down', rotationAngle: 90),
-                        ],
-                      ),
+                    SpeedDialChild(
+                      child: const Icon(Icons.remove, color: Colors.white, size: 20),
+                      backgroundColor: Colors.redAccent,
+                      label: 'Remove Selected',
+                      onTap: () => onRemoveNode(selectedNode!),
                     ),
-                  ),
-                );
-              }
-            },
-          ),
-        ],
+                    SpeedDialChild(
+                      child: const Icon(Icons.add, color: Colors.white, size: 20),
+                      backgroundColor: Colors.cyanAccent,
+                      label: 'Add Model',
+                      onTap: _openCatalogSelectionModal,
+                    ),
+                  ],
+                ),
+              ),
+              if (_isSavingScreenshot)
+                const Center(child: CircularProgressIndicator()),
+
+              // FAB for screenshots
+              Positioned(
+                bottom: isLandscape ? null : 16.0,
+                top: isLandscape ? 16.0 : null,
+                right: isLandscape ? 96.0 : null,
+                left: isLandscape ? null : 16.0,
+                child: FloatingActionButton(
+                  onPressed: () {
+                    saveScreenshot(context);
+                  },
+                  backgroundColor: Colors.cyanAccent,
+                  child: const Icon(Icons.camera_alt, color: Colors.white),
+                ),
+              ),
+              Positioned(
+                right: isLandscape ? 0 : 0,
+                left: isLandscape ? 0 : null,
+                bottom: isLandscape ? 0 : 0,
+                top: isLandscape ? null : 0,
+                child: OrientationBuilder(
+                  builder: (context, orientation) {
+                    if (!isLandscape) {
+                      return SingleChildScrollView(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: _buildControlButtons("column"),
+                        ),
+                      );
+                    } else {
+                      return SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: _buildControlButtons("row"),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -340,26 +412,16 @@ class _ARModelViewerState extends State<ARModelViewer> {
           },
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.transparent,
               shape: BoxShape.circle,
               border: Border.all(
-                color: _isPressedMap[key] == true ? AppColors.secondary : Colors.cyanAccent,
+                color: _isPressedMap[key] == true ? AppColors.secondary : Colors.transparent,
                 width: 2.0,
               ),
             ),
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: _isPressedMap[key] == true ? AppColors.secondary : Colors.transparent,
-                  width: 2.0,
-                ),
-              ),
-              child: IconButton(
-                icon: Icon(icon, color: _isPressedMap[key] == true ? AppColors.secondary : Colors.cyanAccent),
-                onPressed: onPressed,
-                iconSize: 20,
-              ),
+            child: IconButton(
+              icon: Icon(icon, color: _isPressedMap[key] == true ? AppColors.secondary : Colors.cyanAccent),
+              onPressed: onPressed,
+              iconSize: 20,
             ),
           ),
         ),
@@ -387,30 +449,20 @@ class _ARModelViewerState extends State<ARModelViewer> {
             setState(() => _isPressedMap[key] = false);
             timer?.cancel();
           },
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: _isPressedMap[key] == true ? AppColors.secondary : Colors.cyanAccent,
-                width: 2.0,
+          child: Transform.rotate(
+            angle: rotationAngle,
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: _isPressedMap[key] == true ? AppColors.secondary : Colors.transparent,
+                  width: 2.0,
+                ),
               ),
-            ),
-            child: Transform.rotate(
-              angle: rotationAngle,
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _isPressedMap[key] == true ? AppColors.secondary : Colors.transparent,
-                    width: 2.0,
-                  ),
-                ),
-                child: IconButton(
-                  icon: Icon(icon, color: _isPressedMap[key] == true ? AppColors.secondary : Colors.cyanAccent),
-                  onPressed: onPressed,
-                  iconSize: 20,
-                ),
+              child: IconButton(
+                icon: Icon(icon, color: _isPressedMap[key] == true ? AppColors.secondary : Colors.cyanAccent),
+                onPressed: onPressed,
+                iconSize: 20,
               ),
             ),
           ),
@@ -696,55 +748,65 @@ class _ARModelViewerState extends State<ARModelViewer> {
 
   void _openCatalogSelectionModal() {
     showModalBottomSheet(
-        context: context,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(0),
-            topRight: Radius.circular(0),
-          ),
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(0),
+          topRight: Radius.circular(0),
         ),
-        builder: (context) {
-          return StatefulBuilder(
-              builder: (BuildContext context, StateSetter setState) {
-                return Container(
-                  height: MediaQuery.of(context).size.height,
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Select a model',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: _furnitureList.isEmpty ?
-                            const Center(child: CircularProgressIndicator())
-                            : GridView.builder(
-                          padding: const EdgeInsets.all(0.0),
-                          gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3, // 3 cards per row
-                            crossAxisSpacing: 8.0,
-                            mainAxisSpacing: 8.0,
-                            childAspectRatio: 0.7,
-                          ),
-                          itemCount: _furnitureList.length,
-                          itemBuilder: (context, index) {
-                            return _buildFurnitureCard(_furnitureList[index]);
-                          },
-                        )
-                      ),
-                    ],
+      ),
+      isScrollControlled: true, // Allow for a full-screen modal
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            // Check the orientation
+            final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
+            // Adjust the aspect ratio based on orientation
+            final double aspectRatio = isLandscape ? 1.1 : 0.7;
+
+            return Container(
+              // Set the width to cover the entire screen
+              width: MediaQuery.of(context).size.width,
+              height: isLandscape
+                  ? MediaQuery.of(context).size.height
+                  : MediaQuery.of(context).size.height * 0.75,
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                children: [
+                  const Text(
+                    'Select a model',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                );
-              }
-          );
-        }
-      );
-    }
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: _furnitureList.isEmpty
+                        ? const Center(child: CircularProgressIndicator())
+                        : GridView.builder(
+                      padding: const EdgeInsets.all(0.0),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3, // 3 cards per row
+                        crossAxisSpacing: 8.0,
+                        mainAxisSpacing: 8.0,
+                        childAspectRatio: aspectRatio, // Use dynamic aspect ratio
+                      ),
+                      itemCount: _furnitureList.length,
+                      itemBuilder: (context, index) {
+                        return _buildFurnitureCard(_furnitureList[index]);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   void moveNode(Vector3 offset) {
     if (selectedNode != null) {

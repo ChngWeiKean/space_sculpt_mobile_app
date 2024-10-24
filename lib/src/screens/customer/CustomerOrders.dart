@@ -101,7 +101,7 @@ class _CustomerOrdersState extends State<CustomerOrders> {
           return currentStatus == 'On Hold';
         case 'To Receive':
           return currentStatus == 'Shipping' || currentStatus == 'Arrived' || currentStatus == 'Resolved';
-        case 'To Review':
+        case 'Completed':
           return currentStatus == 'Completed';
         default:
           return false;
@@ -167,7 +167,7 @@ class _CustomerOrdersState extends State<CustomerOrders> {
                       _buildFilterButton('To Ship'),
                       _buildFilterButton('To Receive'),
                       _buildFilterButton('Reports'),
-                      _buildFilterButton('To Review'),
+                      _buildFilterButton('Completed'),
                     ],
                   ),
                 ),

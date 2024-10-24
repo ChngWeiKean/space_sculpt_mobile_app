@@ -92,7 +92,7 @@ class _CustomerFurnitureDetailsState extends State<CustomerFurnitureDetails> {
         }
       }
 
-      if (double.parse(data['discount']) != 0.0) {
+      if (double.parse(data['discount'].toString()) != 0.0) {
         double price = double.parse(data['price'].toString());
         double discount = double.parse(data['discount'].toString());
         double discountedPrice = price - (price * discount / 100);
@@ -510,6 +510,105 @@ class _CustomerFurnitureDetailsState extends State<CustomerFurnitureDetails> {
                                     fontSize: 12,
                                     color: Colors.grey[800],
                                   ),
+                                ),
+                                const SizedBox(height: 10),
+                                Divider(
+                                  height: 1,
+                                  color: Colors.grey[300],
+                                  thickness: 1,
+                                ),
+                                const SizedBox(height: 10),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Reviews',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins_Semibold',
+                                        fontSize: 15,
+                                        color: Colors.grey[900],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    _furnitureData?['reviews'] != null && _furnitureData?['reviews'].isNotEmpty
+                                        ? Column(
+                                      children: _furnitureData?['reviews'].entries.map<Widget>((entry) {
+                                        final review = entry.value;
+                                        final userName = review['user']?['name'] ?? 'Anonymous';
+                                        final userImage = review['user']?['profile_picture'] ?? '';
+                                        final rating = review['rating'] ?? 0;
+                                        final reviewText = review['review'] ?? 'No review available';
+
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 5.0), // Add padding between reviews
+                                          child: Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              CircleAvatar(
+                                                backgroundImage: userImage.isNotEmpty ? NetworkImage(userImage) : null,
+                                                radius: 13,
+                                                child: userImage.isEmpty
+                                                    ? const Icon(
+                                                  Icons.person,
+                                                  size: 16,
+                                                  color: AppColors.secondary,
+                                                )
+                                                    : null,
+                                              ),
+                                              const SizedBox(width: 10), // Add space between avatar and text
+                                              Flexible(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Row(
+                                                      children: [
+                                                        Flexible( // Ensure that the username wraps
+                                                          child: Text(
+                                                            userName,
+                                                            style: TextStyle(
+                                                              fontFamily: 'Poppins_Semibold',
+                                                              fontSize: 12,
+                                                              color: Colors.grey[900],
+                                                            ),
+                                                            overflow: TextOverflow.ellipsis, // Prevent overflow
+                                                          ),
+                                                        ),
+                                                        const SizedBox(width: 5),
+                                                        Row(
+                                                          children: List.generate(5, (starIndex) {
+                                                            return Icon(
+                                                              starIndex < rating ? Icons.star : Icons.star_border,
+                                                              color: Colors.amber,
+                                                              size: 14,
+                                                            );
+                                                          }),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 5),
+                                                    Text(
+                                                      reviewText,
+                                                      style: TextStyle(
+                                                        fontFamily: 'Poppins_Regular',
+                                                        fontSize: 10,
+                                                        color: Colors.grey[800],
+                                                      ),
+                                                      maxLines: 3, // Limit review text to 3 lines
+                                                      overflow: TextOverflow.ellipsis, // Handle overflow with ellipsis
+                                                    ),
+                                                    const SizedBox(height: 10),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }).toList(),
+                                    )
+                                        : const Center(
+                                      child: Text('No reviews available'),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),

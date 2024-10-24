@@ -114,12 +114,17 @@ class _DeliveryOrderDetailsState extends State<DeliveryOrderDetails> {
     final DateFormat formatter = DateFormat('dd MMM'); // Format for day and month
     String date = '';
 
+    // Check if currentStatus exists in the status map
     if (status[currentStatus] != null) {
-      final DateTime dateTime = DateTime.parse(status[currentStatus]);
-      date = formatter.format(dateTime);
-    } else if (currentStatus == 'Ready For Shipping') {
-      final DateTime dateTime = DateTime.parse(status['ReadyForShipping']);
-      date = formatter.format(dateTime);
+      final DateTime? dateTime = DateTime.tryParse(status[currentStatus]);
+      if (dateTime != null) {
+        date = formatter.format(dateTime);
+      }
+    } else if (currentStatus == 'Ready For Shipping' && status['ReadyForShipping'] != null) {
+      final DateTime? dateTime = DateTime.tryParse(status['ReadyForShipping']);
+      if (dateTime != null) {
+        date = formatter.format(dateTime);
+      }
     }
 
     switch (currentStatus) {
