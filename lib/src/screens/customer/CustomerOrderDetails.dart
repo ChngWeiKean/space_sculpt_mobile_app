@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:intl/intl.dart';
+import 'package:space_sculpt_mobile_app/src/services/checkout_service.dart';
 import 'package:space_sculpt_mobile_app/src/services/delivery_service.dart';
 import 'package:space_sculpt_mobile_app/src/widgets/button.dart';
 import 'package:space_sculpt_mobile_app/src/widgets/title.dart';
@@ -58,6 +59,15 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
           'isChecked': false,
         };
       }).toList();
+
+      if (_orderData!['reports'] != null) {
+        final reports = _orderData!['reports'] as String;
+        final reportSnapshot = await _dbRef.child('reports/$reports').get();
+        if (reportSnapshot.exists) {
+          final reportData = reportSnapshot.value as Map<dynamic, dynamic>;
+          _orderData!['report'] = reportData;
+        }
+      }
       _fetchUserData();
     }
   }
@@ -127,6 +137,14 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
     // Check if all items are checked
     if (_orderData!['items'].every((item) => item['isChecked'] == true)) {
       await DeliveryService().updateStatus(widget.orderId, 'Completed');
+
+      if (!context.mounted) return;
+
+      Toast.showSuccessToast(
+        title: "Order completed",
+        description: "Your order has been successfully completed",
+        context: context,
+      );
     } else {
       Toast.showErrorToast(
           title: "Error completing order",
@@ -409,6 +427,176 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
     }
   }
 
+  Future<void> handleSubmitReview(BuildContext context, orderId, itemId, rating, review) async {
+    rating ??= 1;
+    review ??= '';
+
+    try {
+      await CheckoutService().addReview(orderId, itemId, rating, review);
+
+      if (!context.mounted) return;
+
+      Toast.showSuccessToast(
+        title: 'Review submitted',
+        description: 'Your review has been submitted successfully',
+        context: context,
+      );
+    } catch (error) {
+      Toast.showErrorToast(
+        title: 'Error submitting review',
+        description: 'An error occurred while submitting your review. Please try again later.',
+        context: context,
+      );
+      print('Error submitting review: $error');
+    }
+  }
+
+  void openResolvedModal(BuildContext context, Map<dynamic, dynamic>? reportData) {
+    showModalBottomSheet(
+        context: context,
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(0),
+            topRight: Radius.circular(0),
+        ),
+      ),
+      builder: (context) {
+          return StatefulBuilder(
+            builder:(BuildContext context, StateSetter setModalState) {
+              return Padding(
+                padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 10.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [],
+                )
+              );
+            }
+          );
+      }
+    );
+  }
+
+  void openReviewModal(BuildContext context, Map<dynamic, dynamic>? reviewData, String itemId) {
+    final TextEditingController reviewController = TextEditingController();
+    int initialRating = reviewData?['rating'] ?? 1;
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(0),
+          topRight: Radius.circular(0),
+        ),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Padding(
+              padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 10.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Furniture Review',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  const Divider(thickness: 1, color: Colors.black26),
+                  const SizedBox(height: 3),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: List.generate(5, (index) {
+                      return GestureDetector(
+                        onTap: reviewData != null
+                            ? null // Disable tap if reviewData exists
+                            : () {
+                          // Update the rating inside modal state
+                          setModalState(() {
+                            initialRating = index + 1;
+                          });
+                        },
+                        child: Icon(
+                          index < initialRating ? Icons.star : Icons.star_border,
+                          color: Colors.amber,
+                          size: 25,
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 10),
+                  reviewData == null
+                      ? TextFormField(
+                      controller: reviewController,
+                      decoration: const InputDecoration(
+                        labelText: 'Review Description',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.all(8),
+                      ),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'Poppins_Regular',
+                      ),
+                    )
+                      : Text(
+                      reviewData['review'] ?? 'No review available',
+                      textAlign: TextAlign.justify,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'Poppins_Regular',
+                        color: Colors.black87,
+                      ),
+                    ),
+
+                  // Conditionally display buttons if no reviewData exists
+                  reviewData == null
+                      ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Button(
+                          text: "Submit",
+                          width: 150,
+                          onPressed: () {
+                            // Handle submission
+                            handleSubmitReview(
+                              context,
+                              widget.orderId,
+                              itemId,
+                              initialRating,
+                              reviewController.text,
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        Button(
+                          text: "Cancel",
+                          color: AppColors.error,
+                          width: 150,
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ],
+                    ),
+                  )
+                      : const SizedBox(),
+                  const SizedBox(height: 10),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -483,6 +671,7 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
                           Flexible(
                             child: Text(
                               _getDetailedStatusDescription(_orderData!['completion_status']),
+                              textAlign: TextAlign.justify,
                               style: const TextStyle(
                                 color: Colors.black,
                                 fontSize: 12.0,
@@ -578,6 +767,13 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
                                   setState(() {
                                     item['isChecked'] = newValue ?? false;
                                   });
+                                },
+                              ),
+                            if (_getCurrentStatus(_orderData!['completion_status']) == 'Completed')
+                              IconButton(
+                                icon: const Icon(Icons.add_comment_outlined, size: 25),
+                                onPressed: () {
+                                  openReviewModal(context, item['review'], item['id']);
                                 },
                               ),
                           ],
@@ -778,7 +974,7 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
               ),
             ),
             const SizedBox(height: 20),
-            if (_getCurrentStatus(_orderData!['completion_status']) == 'Arrived')
+            if (_getCurrentStatus(_orderData!['completion_status']) == 'Arrived' || _getCurrentStatus(_orderData!['completion_status']) == 'Resolved')
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Button(
@@ -802,7 +998,7 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Button(
-                  text: 'Resolved - Report Delivery',
+                  text: 'Resolved - Delivery Report',
                   color: AppColors.warning,
                   onPressed: () {
 

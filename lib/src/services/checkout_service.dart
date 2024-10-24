@@ -225,4 +225,90 @@ class CheckoutService {
       throw Exception('Failed to place order: $error');
     }
   }
+
+  Future<void> addReview(String orderId, String itemId, int rating, String review) async {
+    try {
+      // Reference to the order
+      DatabaseReference orderRef = _dbRef.child('orders/$orderId');
+      DataSnapshot orderSnapshot = await orderRef.get();
+      Map<dynamic, dynamic>? orderData = orderSnapshot.value as Map<dynamic, dynamic>?;
+
+      // Check if order exists
+      if (orderData == null) {
+        throw Exception("Order not found");
+      }
+
+      // Extract the items list from the order
+      List<dynamic> items = orderData['items'] ?? [];
+      Map<dynamic, dynamic>? item = items.firstWhere((element) => element['id'] == itemId, orElse: () => null);
+
+      // Check if item exists in the order
+      if (item == null) {
+        throw Exception("Item not found in order");
+      }
+
+      // Mark the item as reviewed
+      item['reviewed'] = true;
+
+      // Fetch the user information
+      DatabaseReference userRef = _dbRef.child('users/${orderData['user_id']}');
+      DataSnapshot userSnapshot = await userRef.get();
+      Map<dynamic, dynamic>? userData = userSnapshot.value as Map<dynamic, dynamic>?;
+
+      // Check if user data exists
+      if (userData == null) {
+        throw Exception("User not found");
+      }
+
+      // Create the review object
+      item['review'] = {
+        'user': {
+          'id': orderData['user_id'],
+          'name': userData['name'],
+          'profile_picture': userData['profile_picture'] ?? ''
+        },
+        'rating': rating,
+        'review': review,
+        'created_on': DateTime.now().toIso8601String(), // ISO format
+      };
+
+      // Update the order with the modified item review
+      await orderRef.update({
+        'items': items
+      });
+
+      // Reference to the furniture reviews and create a new review entry
+      DatabaseReference reviewRef = _dbRef.child('furniture/$itemId/reviews');
+      DatabaseReference newReviewRef = reviewRef.push();
+
+      await newReviewRef.set({
+        'order_id': orderId,
+        'user': {
+          'id': orderData['user_id'],
+          'name': userData['name'],
+          'profile_picture': userData['profile_picture'] ?? ''
+        },
+        'rating': rating,
+        'review': review,
+        'created_on': DateTime.now().toIso8601String(), // ISO format
+      });
+
+      // Add the review reference to the user's reviews
+      DatabaseReference userReviewRef = _dbRef.child('users/${orderData['user_id']}/reviews');
+      DataSnapshot userReviewSnapshot = await userReviewRef.get();
+
+      List<dynamic> userReviews = [];
+      if (userReviewSnapshot.exists) {
+        userReviews = List<dynamic>.from(userReviewSnapshot.value as List<dynamic>);
+      }
+
+      userReviews.add(newReviewRef.key);
+
+      // Update the user's reviews
+      await userReviewRef.set(userReviews);
+
+    } catch (e) {
+      throw Exception('Failed to add review: $e');
+    }
+  }
 }

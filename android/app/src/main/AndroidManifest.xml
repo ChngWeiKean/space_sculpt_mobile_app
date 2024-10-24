@@ -11,9 +11,9 @@
         android:required="false" />
 
     <application
-        android:label="space_sculpt_mobile_app"
+        android:label="Space Sculpt"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/space_sculpt_logo"
         android:usesCleartextTraffic="true"
         android:enableOnBackInvokedCallback="true">
         <meta-data android:name="com.google.android.geo.API_KEY"

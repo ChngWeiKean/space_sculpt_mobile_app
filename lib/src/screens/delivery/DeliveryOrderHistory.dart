@@ -106,9 +106,6 @@ class _DeliveryOrderHistoryState extends State<DeliveryOrderHistory> {
       case 'Time':
         _orders!.sort((a, b) => a['shipping_time'].compareTo(b['shipping_time']));
         break;
-      case 'Address':
-        _orders!.sort((a, b) => a['address']['address'].compareTo(b['address']['address']));
-        break;
     }
   }
 
@@ -151,7 +148,7 @@ class _DeliveryOrderHistoryState extends State<DeliveryOrderHistory> {
                       _sortOrders(); // Re-sort the orders whenever a new sort option is selected
                     });
                   },
-                  items: <String>['Order ID', 'Status', 'Contact', 'Date', 'Time', 'Address']
+                  items: <String>['Order ID', 'Status', 'Contact', 'Date', 'Time']
                       .map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
@@ -199,10 +196,6 @@ class _DeliveryOrderHistoryState extends State<DeliveryOrderHistory> {
                     DataColumn(label: Text('Time',
                         style: TextStyle(fontSize: 12, fontFamily: 'Poppins_Bold')),
                     ),
-                    DataColumn(
-                      label: Text('Address',
-                          style: TextStyle(fontSize: 12, fontFamily: 'Poppins_Bold')),
-                    ),
                   ],
                   rows: _orders!.map((order) {
                     return DataRow(
@@ -211,9 +204,9 @@ class _DeliveryOrderHistoryState extends State<DeliveryOrderHistory> {
                           GestureDetector(
                             onTap: () => _navigateToOrderDetails(context, order['id'].toString()),
                             child: SizedBox(
-                              width: 30,
+                              width: 50,
                               child: Text(order['order_id'].toString(),
-                                  overflow: TextOverflow.ellipsis,
+                                  overflow: TextOverflow.visible,
                                   style: const TextStyle(
                                       fontSize: 12,
                                       fontFamily: 'Poppins_Medium',
@@ -225,7 +218,7 @@ class _DeliveryOrderHistoryState extends State<DeliveryOrderHistory> {
                           SizedBox(
                             width: 100, // Set width for the 'Status' column
                             child: Text(_getCurrentStatus(order['completion_status']),
-                                overflow: TextOverflow.ellipsis,
+                                overflow: TextOverflow.visible,
                                 style: const TextStyle(fontSize: 12, fontFamily: 'Poppins_Medium')),
                           ),
                         ),
@@ -233,30 +226,23 @@ class _DeliveryOrderHistoryState extends State<DeliveryOrderHistory> {
                           SizedBox(
                             width: 100, // Set width for the 'Contact' column
                             child: Text(order['user']['contact'].toString(),
-                                overflow: TextOverflow.ellipsis,
+                                overflow: TextOverflow.visible,
                                 style: const TextStyle(fontSize: 12, fontFamily: 'Poppins_Medium')),
                           ),
                         ),
                         DataCell(
                           SizedBox(
-                            width: 80, // Set width for the 'Date' column
+                            width: 100, // Set width for the 'Date' column
                             child: Text(order['shipping_date'].toString(),
-                                overflow: TextOverflow.ellipsis,
+                                overflow: TextOverflow.visible,
                                 style: const TextStyle(fontSize: 12, fontFamily: 'Poppins_Medium')),
                           ),
                         ),
                         DataCell(
                           SizedBox(
-                            width: 80, // Set width for the 'Time' column
+                            width: 70, // Set width for the 'Time' column
                             child: Text(order['shipping_time'].toString(),
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 12, fontFamily: 'Poppins_Medium')),
-                          ),
-                        ),
-                        DataCell(
-                          SizedBox(
-                            width: 200, // Set width for the 'Address' column
-                            child: Text(order['address']['address'].toString(),
+                                overflow: TextOverflow.visible,
                                 style: const TextStyle(fontSize: 12, fontFamily: 'Poppins_Medium')),
                           ),
                         ),

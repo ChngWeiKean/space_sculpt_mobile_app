@@ -22,7 +22,7 @@ class Button extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
+          padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 24.0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8.0),
           ),
@@ -33,7 +33,7 @@ class Button extends StatelessWidget {
           text,
           style: const TextStyle(
             fontFamily: 'Poppins_Bold',
-            fontSize: 16.0,
+            fontSize: 12.0,
           ),
         ),
       ),

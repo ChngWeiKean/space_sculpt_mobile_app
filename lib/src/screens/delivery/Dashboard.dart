@@ -18,6 +18,7 @@ class _DashboardState extends State<Dashboard> {
   Map<dynamic, dynamic>? _userData;
   List<Map<dynamic, dynamic>>? _orders;
   List<Map<dynamic, dynamic>>? _todayOrders;
+  Map<String, int> _orderStatistics = {};
 
   @override
   void initState() {
@@ -85,8 +86,41 @@ class _DashboardState extends State<Dashboard> {
       setState(() {
         _orders = validOrders;
         _todayOrders = todayOrders;
+        _orderStatistics = _calculateOrderStatistics(validOrders);
       });
     }
+  }
+
+  Map<String, int> _calculateOrderStatistics(List<Map<dynamic, dynamic>> orders) {
+    Map<String, int> statusCounts = {
+      'Pending': 0,
+      'Ready For Shipping': 0,
+      'Shipping': 0,
+      'Arrived': 0,
+      'On Hold': 0,
+      'Resolved': 0,
+      'Completed': 0,
+    };
+
+    for (var order in orders) {
+      String currentStatus = _getCurrentStatus(order['completion_status']);
+      if (statusCounts.containsKey(currentStatus)) {
+        statusCounts[currentStatus] = statusCounts[currentStatus]! + 1;
+      }
+    }
+
+    return statusCounts;
+  }
+
+  String _getCurrentStatus(Map<dynamic, dynamic> status) {
+    if (status['Completed'] != null) return 'Completed';
+    if (status['Resolved'] != null) return 'Resolved';
+    if (status['OnHold'] != null) return 'On Hold';
+    if (status['Arrived'] != null) return 'Arrived';
+    if (status['Shipping'] != null) return 'Shipping';
+    if (status['ReadyForShipping'] != null) return 'Ready For Shipping';
+    if (status['Pending'] != null) return 'Pending';
+    return 'Unknown';
   }
 
   @override
@@ -120,107 +154,6 @@ class _DashboardState extends State<Dashboard> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      margin: const EdgeInsets.only(right: 10.0),
-                                      padding: const EdgeInsets.all(15.0),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(10.0),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              const Icon(Icons.local_shipping_outlined, color: AppColors.secondary, size: 30),
-                                              const SizedBox(width: 10),
-                                              Column(
-                                                mainAxisAlignment: MainAxisAlignment.start,
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text(
-                                                    'Deliveries Completed',
-                                                    style: TextStyle(
-                                                      fontSize: 12.0,
-                                                      fontFamily: 'Poppins_Bold',
-                                                    ),
-                                                  ),
-                                                  _orders == null
-                                                      ? const CircularProgressIndicator()
-                                                      : Text(
-                                                    '${_orders!.length}',
-                                                    style: const TextStyle(
-                                                      fontSize: 14.0,
-                                                      fontFamily: 'Poppins_Regular',
-                                                    ),
-                                                  ),
-                                                ],
-                                              )
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    // Add more containers here as needed
-                                    Container(
-                                      margin: const EdgeInsets.only(right: 10.0),
-                                      padding: const EdgeInsets.all(15.0),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(10.0),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              const Icon(Icons.local_shipping_outlined, color: AppColors.secondary, size: 30),
-                                              const SizedBox(width: 10),
-                                              Column(
-                                                mainAxisAlignment: MainAxisAlignment.start,
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text(
-                                                    'Deliveries Pending',
-                                                    style: TextStyle(
-                                                      fontSize: 12.0,
-                                                      fontFamily: 'Poppins_Bold',
-                                                    ),
-                                                  ),
-                                                  _orders == null
-                                                      ? const CircularProgressIndicator()
-                                                      : const Text(
-                                                    'Some Data',
-                                                    style: TextStyle(
-                                                      fontSize: 14.0,
-                                                      fontFamily: 'Poppins_Regular',
-                                                    ),
-                                                  ),
-                                                ],
-                                              )
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    // Repeat the above Container for more items
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                       const SizedBox(height: 20),
                       ExpansionTile(
                         title: const Text(
@@ -230,10 +163,10 @@ class _DashboardState extends State<Dashboard> {
                             fontFamily: 'Poppins_Bold',
                           ),
                         ),
-                        backgroundColor: Colors.white, // Background color when expanded
-                        collapsedBackgroundColor: Colors.white, // Background color when collapsed
-                        childrenPadding: EdgeInsets.zero, // Remove padding for children
-                        tilePadding: const EdgeInsets.symmetric(horizontal: 15.0), // Optional: Add padding for title
+                        backgroundColor: Colors.white,
+                        collapsedBackgroundColor: Colors.white,
+                        childrenPadding: EdgeInsets.zero,
+                        tilePadding: const EdgeInsets.symmetric(horizontal: 15.0),
                         expandedCrossAxisAlignment: CrossAxisAlignment.start,
                         expandedAlignment: Alignment.centerLeft,
                         children: <Widget>[
@@ -243,12 +176,20 @@ class _DashboardState extends State<Dashboard> {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(10.0),
                             ),
-                            child: const Text(
-                              'Dummy text for Your Statistics...',
-                              style: TextStyle(
-                                fontSize: 14.0,
-                                fontFamily: 'Poppins_Regular',
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: _orderStatistics.entries.map((entry) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 5.0),
+                                  child: Text(
+                                    '${entry.key}: ${entry.value}',
+                                    style: const TextStyle(
+                                      fontSize: 14.0,
+                                      fontFamily: 'Poppins_Regular',
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
                             ),
                           ),
                         ],

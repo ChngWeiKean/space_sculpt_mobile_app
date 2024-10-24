@@ -12,12 +12,17 @@ class FurnitureCard extends StatelessWidget {
     double averageRating = 0.0;
     int ratingCount = 0;
 
+    // Parse price
     try {
       price = double.parse(data['price'].toString());
     } catch (e) {
-      print('Error parsing cost: $e');
+      print('Error parsing price: $e');
     }
 
+    // Ensure discount is valid, default to 0 if null
+    var discount = data['discount'] ?? 0;
+
+    // Parse ratings if available
     if (data['ratings'] != null && data['ratings'] is List) {
       List ratingsList = data['ratings'];
       ratingCount = ratingsList.length;
@@ -36,7 +41,11 @@ class FurnitureCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        Navigator.pushNamed(context, Routes.customerFurnitureDetails, arguments: data['id']);
+        Navigator.pushNamed(
+          context,
+          Routes.customerFurnitureDetails,
+          arguments: data['id'],
+        );
       },
       child: SizedBox(
         child: Container(
@@ -47,13 +56,19 @@ class FurnitureCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // Display image
               SizedBox(
                 height: 150,
                 child: data['mainImage'] != null
-                    ? Image.network(data['mainImage'], height: 140, fit: BoxFit.contain)
+                    ? Image.network(
+                  data['mainImage'],
+                  height: 140,
+                  fit: BoxFit.contain,
+                )
                     : const Center(child: Text('No Image')),
               ),
               const SizedBox(height: 5),
+              // Display furniture name
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -66,6 +81,7 @@ class FurnitureCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 5),
+              // Display price and discount
               Align(
                 alignment: Alignment.centerLeft,
                 child: Row(
@@ -78,10 +94,10 @@ class FurnitureCard extends StatelessWidget {
                         color: Colors.black,
                       ),
                     ),
-                    if ((int.parse(data!['discount'])) > 0) ...[
+                    if ((int.parse(discount.toString())) > 0) ...[
                       const SizedBox(width: 8.0),
                       Text(
-                        '- ${data['discount']}%',
+                        '- ${discount.toString()}%',
                         style: const TextStyle(
                           color: Colors.red,
                           fontSize: 13,
@@ -93,6 +109,7 @@ class FurnitureCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 5),
+              // Display average rating and count
               Align(
                 alignment: Alignment.centerLeft,
                 child: Row(
@@ -100,7 +117,9 @@ class FurnitureCard extends StatelessWidget {
                     Row(
                       children: List.generate(5, (index) {
                         return Icon(
-                          index < averageRating ? Icons.star : Icons.star_border,
+                          index < averageRating
+                              ? Icons.star
+                              : Icons.star_border,
                           color: Colors.amber,
                           size: 15,
                         );
