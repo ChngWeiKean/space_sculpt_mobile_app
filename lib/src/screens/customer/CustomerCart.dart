@@ -61,7 +61,7 @@ class _CustomerCartState extends State<CustomerCart> {
         var variantSnapshot = await _dbRef.child('furniture/${cartItem['furnitureId']}/variants/${cartItem['variantId']}').get();
         if (furnitureSnapshot.exists && variantSnapshot.exists) {
           var furnitureData = furnitureSnapshot.value as Map<dynamic, dynamic>;
-          if (double.parse(furnitureData['discount']) != 0.0) {
+          if (double.parse(furnitureData['discount'].toString()) != 0.0) {
             double price = double.parse(furnitureData['price'].toString());
             double discount = double.parse(furnitureData['discount'].toString());
             double discountedPrice = price - (price * discount / 100);

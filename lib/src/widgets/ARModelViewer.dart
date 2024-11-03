@@ -22,7 +22,7 @@ class ARModelViewer extends StatefulWidget {
   final Map<dynamic, dynamic>? furnitureData;
   final String? selectedVariant;
 
-  ARModelViewer({required this.furnitureData, required this.selectedVariant, Key? key}) : super(key: key);
+  const ARModelViewer({required this.furnitureData, required this.selectedVariant, super.key});
 
   @override
   _ARModelViewerState createState() => _ARModelViewerState();
@@ -73,7 +73,6 @@ class _ARModelViewerState extends State<ARModelViewer> {
         final variants = (value['variants'] as Map<dynamic, dynamic>?)?.values.toList() ?? [];
         final variantKeys = (value['variants'] as Map<dynamic, dynamic>?)?.keys.toList() ?? [];
 
-        // add variant keys to each variant data
         for (var i = 0; i < variantKeys.length; i++) {
           variants[i]['key'] = variantKeys[i];
         }
@@ -94,16 +93,10 @@ class _ARModelViewerState extends State<ARModelViewer> {
           List ratingsList = value['ratings'];
           value['ratingCount'] = ratingsList.length;
           double totalRatings = 0.0;
-
           for (var rating in ratingsList) {
-            if (rating['rating'] != null) {
-              totalRatings += double.parse(rating['rating'].toString());
-            }
+            if (rating['rating'] != null) { totalRatings += double.parse(rating['rating'].toString()); }
           }
-
-          if (value['ratingCount'] > 0) {
-            value['averageRatings'] = totalRatings / value['ratingCount'];
-          }
+          if (value['ratingCount'] > 0) { value['averageRatings'] = totalRatings / value['ratingCount']; }
         }
 
         value['id'] = key;
