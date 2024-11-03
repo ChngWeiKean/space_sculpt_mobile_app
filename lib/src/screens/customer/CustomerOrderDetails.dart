@@ -793,7 +793,7 @@ class _CustomerOrderDetailsState extends State<CustomerOrderDetails> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'RM ${(double.parse(item['price']) * (1 - double.parse(item['discount']) / 100)).toStringAsFixed(2)}',
+                                  'RM ${(double.parse(item['price']) * (1 - double.parse(item['discount'].toString()) / 100)).toStringAsFixed(2)}',
                                   style: const TextStyle(
                                     fontFamily: 'Poppins_Medium',
                                     fontSize: 13,
